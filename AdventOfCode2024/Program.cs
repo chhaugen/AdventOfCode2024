@@ -27,6 +27,7 @@ internal class Program
         puzzles.AddPuzzle<Day01Puzzle02>(logger, ResourceDirectoryInfo);
         puzzles.AddPuzzle<Day02Puzzle01>(logger, ResourceDirectoryInfo);
         puzzles.AddPuzzle<Day02Puzzle02>(logger, ResourceDirectoryInfo);
+        puzzles.AddPuzzle<Day03Puzzle01>(logger, ResourceDirectoryInfo);
 
         WriteLine("Which puzzle do you want to solve?");
         int puzzleI = 0;

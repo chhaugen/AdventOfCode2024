@@ -8,9 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Resources\Day01Puzzle01\input.txt" />
-    <Folder Include="Resources\Day01Puzzle02\input.txt" />
-    <Folder Include="Resources\Day02Puzzle01\input.txt" />
+    <Folder Include="Resources\**\*" />
   </ItemGroup>
 
   <ItemGroup>
