@@ -1,6 +1,5 @@
 ﻿using AdventOfCode2024.Extentions;
 using Microsoft.Extensions.Logging;
-using System.Runtime.Intrinsics.Arm;
 using System.Text;
 
 namespace AdventOfCode2024.Puzzles;
