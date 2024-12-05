@@ -19,21 +19,21 @@ public class Day04Puzzle02 : Puzzle
         //input = "MMMSXXMASM\nMSAMXMSMSA\nAMXSXMAAMM\nMSAMASMSMX\nXMASAMXAMM\nXXAMMXXAMA\nSMSMSASXSS\nSAXAMASAAA\nMAMMMXMMMM\nMXMXAXMASX";
 
         char[,] inputArray = Day04Puzzle01.ParseInput(input);
-        _logger.LogDebug(Print2DArray(inputArray));
+        //_logger.LogDebug(Print2DArray(inputArray));
 
         char?[,] firstMask = {
             { 'M' , null, 'S'  },
             { null, 'A' , null },
             { 'M' , null, 'S'  }
         };
-        _logger.LogDebug(Print2DArray(firstMask));
+        //_logger.LogDebug(Print2DArray(firstMask));
 
         var maskRotatedOnce = RotateMatrixCounterClockwise(firstMask);
-        _logger.LogDebug(Print2DArray(maskRotatedOnce));
+        //_logger.LogDebug(Print2DArray(maskRotatedOnce));
         var maskRotatedTwice = RotateMatrixCounterClockwise(maskRotatedOnce);
-        _logger.LogDebug(Print2DArray(maskRotatedTwice));
+        //_logger.LogDebug(Print2DArray(maskRotatedTwice));
         var maskRotatedTrise = RotateMatrixCounterClockwise(maskRotatedTwice);
-        _logger.LogDebug(Print2DArray(maskRotatedTrise));
+        //_logger.LogDebug(Print2DArray(maskRotatedTrise));
 
         List<char?[,]> masks = [firstMask, maskRotatedOnce, maskRotatedTwice, maskRotatedTrise];
 
@@ -135,9 +135,13 @@ public class Day04Puzzle02 : Puzzle
                             continue;
 
                         if (!maskChar.Equals(arrayChar))
+                        {
                             success = false;
+                            goto breakInner;
+                        }
                     }
                 }
+                breakInner:
                 if (success)
                     count++;
             }
