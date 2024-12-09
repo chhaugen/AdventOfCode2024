@@ -72,7 +72,11 @@ public class Day09Puzzle01 : Puzzle
             foreach (var block in _map)
             {
                 if (block.HasValue)
+                {
+                    sb.Append('[');
                     sb.Append(block.Value);
+                    sb.Append(']');
+                }
                 else
                     sb.Append('.');
             }
@@ -137,9 +141,9 @@ public class Day09Puzzle01 : Puzzle
                     rightIndex--;
                 }
                 rightIndex++;
-
                 // Use a span to slice the right range
-                Span<int?> rightSpan = _map.AsSpan(rightStartIndex.Value, rightEndIndex - rightStartIndex.Value + 1);
+                Range rightRange = new(rightStartIndex.Value, rightEndIndex +1);
+                Span<int?> rightSpan = _map.AsSpan(rightRange);
 
 
                 for (int leftIndex = 0; leftIndex < _map.Length; leftIndex++)
@@ -170,7 +174,8 @@ public class Day09Puzzle01 : Puzzle
                     leftIndex--;
 
                     // Represent as a span
-                    Span<int?> leftSpan = _map.AsSpan(leftStartIndex, leftEndIndex.Value - leftStartIndex + 1);
+                    Range leftRange = new(leftStartIndex, leftEndIndex.Value +1);
+                    Span<int?> leftSpan = _map.AsSpan(leftRange);
 
                     // Only move when there is enough space on the left
                     if (leftSpan.Length < rightSpan.Length)
