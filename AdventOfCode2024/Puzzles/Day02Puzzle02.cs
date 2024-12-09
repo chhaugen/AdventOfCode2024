@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 
 namespace AdventOfCode2024.Puzzles;
-internal class Day02Puzzle02 : Puzzle
+public class Day02Puzzle02 : Puzzle
 {
     public Day02Puzzle02(ILogger logger, DirectoryInfo puzzleResourceDirectory) : base(logger, puzzleResourceDirectory)
     {

@@ -33,12 +33,18 @@ internal class Program
         puzzles.AddPuzzle<Day04Puzzle02>(logger, ResourceDirectoryInfo);
         puzzles.AddPuzzle<Day05Puzzle01>(logger, ResourceDirectoryInfo);
         puzzles.AddPuzzle<Day05Puzzle02>(logger, ResourceDirectoryInfo);
+        puzzles.AddPuzzle<Day06Puzzle01>(logger, ResourceDirectoryInfo);
+        puzzles.AddPuzzle<Day06Puzzle02>(logger, ResourceDirectoryInfo);
+        puzzles.AddPuzzle<Day07Puzzle01>(logger, ResourceDirectoryInfo);
+        puzzles.AddPuzzle<Day07Puzzle02>(logger, ResourceDirectoryInfo);
+        puzzles.AddPuzzle<Day08Puzzle01>(logger, ResourceDirectoryInfo);
+        puzzles.AddPuzzle<Day08Puzzle02>(logger, ResourceDirectoryInfo);
 
         WriteLine("Which puzzle do you want to solve?");
         int puzzleI = 0;
         foreach (var puzzle in puzzles)
         {
-            WriteLine($"[{puzzleI}] {puzzle.Key}");
+            WriteLine($"[{puzzleI:D2}] {puzzle.Key}");
             puzzleI++;
         }
         WriteLine();
