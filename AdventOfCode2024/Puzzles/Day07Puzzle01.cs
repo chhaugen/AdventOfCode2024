@@ -16,8 +16,8 @@ public class Day07Puzzle01 : Puzzle
 
 
         // Example
-        //var exampleFile = _puzzleResourceDirectory.GetFiles("example.txt").First();
-        //inputString = await exampleFile.ReadAllTextAsync();
+        var exampleFile = _puzzleResourceDirectory.GetFiles("example.txt").First();
+        inputString = await exampleFile.ReadAllTextAsync();
 
         var unfinishedEquations = ParseInput(inputString);
 
@@ -126,6 +126,9 @@ public class Day07Puzzle01 : Puzzle
 
         public string Symbol { get; }
         public Func<T,T,T> Function { get; }
+
+        public override string ToString()
+            => Symbol;
     }
 
 }
