@@ -18,4 +18,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Resources\Day09Puzzle01\" />
+  </ItemGroup>
+
 </Project>
