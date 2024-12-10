@@ -13,12 +13,12 @@ public class Day01Puzzle02 : Puzzle
 
         var groupings = rightColumn
             .Where(leftColumn.Contains)
-            .GroupBy(x => x)
+            .Select(x => leftColumn.Count(y => y == x) * x)
             .ToList();
         var groupingsSerialized = JsonSerializer.Serialize(groupings, options: new JsonSerializerOptions() { WriteIndented = true });
         _progressOutput(groupingsSerialized);
 
-        var similarityScore = groupings.Sum(x => x.Count() * x.Key);
+        var similarityScore = groupings.Sum();
         return Task.FromResult(similarityScore.ToString());
     }
 }
