@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <Folder Include="Resources\Day09Puzzle01\" />
+    <Folder Include="Resources\Day10Puzzle01\" />
   </ItemGroup>
 
 </Project>
