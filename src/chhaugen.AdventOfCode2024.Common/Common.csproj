@@ -8,4 +8,8 @@
     <RootNamespace>chhaugen.AdventOfCode2024.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
   </PropertyGroup>
 
+	<ItemGroup>
+		<InternalsVisibleTo Include="$(AssemblyName).Tests"/>
+	</ItemGroup>
+
 </Project>

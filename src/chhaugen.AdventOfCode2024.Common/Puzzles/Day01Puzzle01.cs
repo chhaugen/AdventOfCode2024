@@ -31,7 +31,7 @@ public class Day01Puzzle01 : Puzzle
     {
         List<int> first = [];
         List<int> second = [];
-        string[] lines = input.Split('\n');
+        string[] lines = input.Split('\n', options: StringSplitOptions.RemoveEmptyEntries);
         foreach (var line in lines)
         {
             string[] valuesStrings = line.Split(' ', options: StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);

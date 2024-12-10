@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\chhaugen.AdventOfCode2024.Common\Common.csproj" />
     <ProjectReference Include="..\..\src\chhaugen.AdventOfCode2024.Resources\Resources.csproj" />
   </ItemGroup>
 
