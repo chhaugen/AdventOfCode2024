@@ -1,6 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Numerics;
-using static chhaugen.AdventOfCode2024.Common.Puzzles.Day11Puzzle01;
+﻿using static chhaugen.AdventOfCode2024.Common.Puzzles.Day11Puzzle01;
 
 namespace chhaugen.AdventOfCode2024.Common.Puzzles;
 public class Day11Puzzle02 : Puzzle
@@ -18,54 +16,6 @@ public class Day11Puzzle02 : Puzzle
         Dictionary<(int times, long stone), long> stoneCache = [];
         var counts = initialStones.Select(x => GetBlinkStonesCount(x, times, stoneCache)).ToList();
         return Task.FromResult(counts.Select(x => (long)x).Sum().ToString());
-    }
-
-    public static IEnumerable<long> BlinkStones(IEnumerable<long> stones)
-    {
-        foreach (var stone in stones)
-        {
-            if (stone == 0)
-            {
-                yield return 1;
-                continue;
-            }
-
-            var stoneString = stone.ToString();
-            if (stoneString.Length % 2 == 0)
-            {
-                var halfLength = stoneString.Length / 2;
-                var firstStoneSpan = stoneString.AsSpan(..halfLength);
-                var firstStone = long.Parse(firstStoneSpan);
-                yield return firstStone;
-                var secondStoneSpan = stoneString.AsSpan(halfLength..);
-                var secondStone = long.Parse(secondStoneSpan);
-                yield return secondStone;
-                continue;
-            }
-
-            yield return stone * 2024;
-        }
-    }
-
-    public static long[] BlinkStone(long stone)
-    {
-        if (stone == 0)
-        {
-            return [1];
-        }
-
-        var stoneString = stone.ToString();
-        if (stoneString.Length % 2 == 0)
-        {
-            var halfLength = stoneString.Length / 2;
-            var firstStoneSpan = stoneString.AsSpan(..halfLength);
-            var firstStone = long.Parse(firstStoneSpan);
-            var secondStoneSpan = stoneString.AsSpan(halfLength..);
-            var secondStone = long.Parse(secondStoneSpan);
-            return [firstStone, secondStone];
-        }
-
-        return [stone * 2024];
     }
 
     public long GetBlinkStonesCount(long stone, int times, Dictionary<(int times, long stone), long> cache)
