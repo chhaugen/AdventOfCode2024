@@ -10,7 +10,7 @@ public class Day11Puzzle03 : Puzzle
     {
     }
     public override Task<string> SolveAsync(string input)
-        => SolveAsync(input, times: 1500);
+        => SolveAsync(input, times: 500);
 
     public Task<string> SolveAsync(string input, int times)
     {
