@@ -8,46 +8,65 @@ public class Day01Puzzle01 : Puzzle
 
     public override Task<string> SolveAsync(string input)
     {
-        (List<int> firstColumn, List<int> secondColumn) = ParseInput(input);
-        firstColumn.Sort();
-        secondColumn.Sort();
-        _progressOutput($"{firstColumn} has a count of {firstColumn.Count}");
-        _progressOutput($"{secondColumn} has a count of {secondColumn.Count}");
-        if (firstColumn.Count != secondColumn.Count)
-            throw new InvalidOperationException("The two columns are not the same length!");
+        LocationLists locationLists = LocationLists.ParseInput(input);
 
-        List<int> differences = [];
-        for (int i = 0; i < firstColumn.Count; i++)
-        {
-            int difference = Math.Abs(firstColumn[i] - secondColumn[i]);
-            differences.Add(difference);
-        }
+        var distance = locationLists.FindTotalDistance();
 
-        int differenceSum = differences.Sum();
-        return Task.FromResult(differenceSum.ToString());
+        return Task.FromResult(distance.ToString());
     }
 
-    public static (List<int>, List<int>) ParseInput(string input)
+    public class LocationLists
     {
-        List<int> first = [];
-        List<int> second = [];
-        string[] lines = input.Split('\n', options: StringSplitOptions.RemoveEmptyEntries);
-        foreach (var line in lines)
+        private readonly int[] _leftList;
+        private readonly int[] _rightList;
+
+        private LocationLists(int[] leftList, int[] rightList)
         {
-            string[] valuesStrings = line.Split(' ', options: StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-
-            if (valuesStrings.Length == 0)
-                continue;
-
-            if (!int.TryParse(valuesStrings[0], out int firstValue))
-                throw new InvalidOperationException($"First value {valuesStrings[0]} could not be parsed.");
-
-            if (!int.TryParse(valuesStrings[1], out int secondValue))
-                throw new InvalidOperationException($"Second value {valuesStrings[1]} could not be parsed.");
-
-            first.Add(firstValue);
-            second.Add(secondValue);
+            _leftList = leftList;
+            _rightList = rightList;
         }
-        return (first, second);
+
+        public int FindTotalDistance()
+        {
+            var leftListSorted = _leftList.Order();
+            var rightListSorted = _rightList.Order();
+
+            var distance = leftListSorted
+                .Zip(rightListSorted, (left, right) => Math.Abs(left-right))
+                .Sum();
+            return distance;
+        }
+
+        public int GetSimilarityScore()
+        {
+            return _rightList
+            .Where(_leftList.Contains)
+            .Select(x => _leftList.Count(y => y == x) * x)
+            .Sum();
+        }
+
+        public static LocationLists ParseInput(string input)
+        {
+            string[] lines = input.Split('\n', options: StringSplitOptions.RemoveEmptyEntries);
+            int[] left = new int[lines.Length];
+            int[] right = new int[lines.Length];
+            for (int i = 0; i < lines.Length; i++)
+            {
+                var valuesStrings = lines[i]
+                    .Split(' ')
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .ToList();
+
+                if (!int.TryParse(valuesStrings[0], out int leftValue))
+                    throw new InvalidOperationException($"First value {valuesStrings[0]} could not be parsed.");
+
+                if (!int.TryParse(valuesStrings[1], out int rightValue))
+                    throw new InvalidOperationException($"Second value {valuesStrings[1]} could not be parsed.");
+
+                left[i] = leftValue;
+                right[i] = rightValue;
+            }
+            return new(left, right);
+        }
     }
 }
