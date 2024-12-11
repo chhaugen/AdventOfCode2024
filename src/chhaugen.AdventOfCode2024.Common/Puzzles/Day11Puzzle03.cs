@@ -1,4 +1,6 @@
 ﻿
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Numerics;
 
 namespace chhaugen.AdventOfCode2024.Common.Puzzles;
@@ -8,25 +10,36 @@ public class Day11Puzzle03 : Puzzle
     {
     }
     public override Task<string> SolveAsync(string input)
-        => this.SolveAsync(input, times: 150);
+        => SolveAsync(input, times: 1500);
 
     public Task<string> SolveAsync(string input, int times)
     {
         var initialStones = Day11Puzzle01.ParseInput(input);
 
-        Dictionary<StoneTimes, BigInteger> stoneCache = [];
-        var counts = initialStones.Select(x => GetBlinkStonesCount(x, times, stoneCache)).ToList();
-
-        BigInteger count = 0;
-        foreach (BigInteger stoneCount in counts)
+        ConcurrentBag<BigInteger> counts = [];
+        ConcurrentDictionary<ulong, BigInteger> stoneCache = [];
+        Stopwatch sw = Stopwatch.StartNew();
+        Parallel.ForEach(initialStones, stone =>
         {
-            count += stoneCount;
+            var count = GetBlinkStonesCountCached(stone, times, stoneCache);
+            counts.Add(count);
+        });
+        BigInteger count = 0;
+        foreach (var countStone in counts)
+        {
+            count += countStone;
         }
+        //foreach (var stone in initialStones)
+        //{
+        //    count += GetBlinkStonesCountCached(stone, times, stoneCache);
+        //}
+        sw.Stop();
+        _progressOutput($"Time used: {sw.ElapsedMilliseconds}ms");
 
         return Task.FromResult(count.ToString());
     }
 
-    public BigInteger GetBlinkStonesCount(BigInteger stone, int times, Dictionary<StoneTimes, BigInteger> cache)
+    internal BigInteger GetBlinkStonesCount(BigInteger stone, int times, IDictionary<ulong, BigInteger> cache)
     {
         if (times == 0)
             return 1;
@@ -54,17 +67,17 @@ public class Day11Puzzle03 : Puzzle
         return GetBlinkStonesCountCached(newStone, times - 1, cache);
     }
 
-    internal BigInteger GetBlinkStonesCountCached(BigInteger stone, int times, Dictionary<StoneTimes, BigInteger> cache)
+    public BigInteger GetBlinkStonesCountCached(BigInteger stone, int times, IDictionary<ulong, BigInteger> cache)
     {
-        StoneTimes stoneTimes = new(stone, times);
-        if (cache.TryGetValue(stoneTimes, out BigInteger stoneCachedCount))
+        ulong hashcode = MakeLong(stone.GetHashCode(), times.GetHashCode());
+        if (cache.TryGetValue(hashcode, out BigInteger stoneCachedCount))
         {
             return stoneCachedCount;
         }
         else
         {
             BigInteger calculatedStoneValue = GetBlinkStonesCount(stone, times, cache);
-            cache[stoneTimes] = calculatedStoneValue;
+            cache[hashcode] = calculatedStoneValue;
             return calculatedStoneValue;
         }
     }
@@ -74,15 +87,29 @@ public class Day11Puzzle03 : Puzzle
             return 1;
         return (int)BigInteger.Log10(num) + 1;
     }
+    //public static long MakeLong(int left, int right)
+    //{
+    //    //implicit conversion of left to a long
+    //    long res = left;
 
-    public readonly struct StoneTimes
+    //    //shift the bits creating an empty space on the right
+    //    // ex: 0x0000CFFF becomes 0xCFFF0000
+    //    res <<= 32;
+
+    //    //combine the bits on the right with the previous value
+    //    // ex: 0xCFFF0000 | 0x0000ABCD becomes 0xCFFFABCD
+    //    res |= (uint)right; //uint first to prevent loss of signed bit
+
+    //    //return the combined result
+    //    return res;
+    //}
+
+    public static unsafe ulong MakeLong(int low, int high)
     {
-        public StoneTimes(BigInteger stone, int times)
-        {
-            Stone = stone;
-            Times = times;
-        }
-        public BigInteger Stone { get; }
-        public int Times { get; }
+        ulong retVal;
+        int* ptr = (int*)&retVal;
+        *ptr++ = low;
+        *ptr = high;
+        return retVal;
     }
 }

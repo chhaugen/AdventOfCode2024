@@ -6,10 +6,11 @@
     <Nullable>enable</Nullable>
     <AssemblyName>chhaugen.AdventOfCode2024.$(MSBuildProjectName)</AssemblyName>
     <RootNamespace>chhaugen.AdventOfCode2024.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
 	<ItemGroup>
-		<InternalsVisibleTo Include="$(AssemblyName).Tests"/>
+		<InternalsVisibleTo Include="$(AssemblyName).Tests" />
 	</ItemGroup>
 
 </Project>
