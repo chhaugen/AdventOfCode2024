@@ -39,8 +39,8 @@ public class Day06Puzzle02 : Puzzle
         //foreach (var newObstructionMap in mapVariations)
         //{
         //    //Console.SetCursorPosition(0, 0);
-        //    //Console.WriteLine(PrintMap(newObstructionMap));
-        //    //Console.WriteLine($"Current count: {countLooped}");
+        //    //_progressOutput(PrintMap(newObstructionMap));
+        //    //_progressOutput($"Current count: {countLooped}");
         //    if (GuardWillLoop(newObstructionMap))
         //        countLooped++;
         //}
@@ -72,7 +72,7 @@ public class Day06Puzzle02 : Puzzle
             else
                 guardIsGone = true;
             //Console.SetCursorPosition(0, 0);
-            //Console.WriteLine(PrintMap(newObstructionMap));
+            //_progressOutput(PrintMap(newObstructionMap));
         }
         return guardLooped;
     }

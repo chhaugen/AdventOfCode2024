@@ -11,9 +11,9 @@ public class Day09Puzzle02 : Puzzle
     {
 
         Disk disk = Disk.ParseInput(inputString);
-        //Console.WriteLine(disk.PrintDiskLayout());
+        //_progressOutput(disk.PrintDiskLayout());
         disk.Defragment();
-        //Console.WriteLine(disk.PrintDiskLayout());
+        //_progressOutput(disk.PrintDiskLayout());
 
         var checksum = disk.CalculateChecksum();
 

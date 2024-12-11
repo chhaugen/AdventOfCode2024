@@ -10,15 +10,14 @@ public class Day06Puzzle01 : Puzzle
     public override Task<string> SolveAsync(string inputString)
     {
         var map = ParseInput(inputString);
-
-        Console.WriteLine(PrintMap(map));
+        _progressOutput(PrintMap(map));
 
         var guard = FindGuard(map);
         PlayGuard(guard);
 
         int countCovered = Count(map, MapFeature.Covered);
 
-        Console.WriteLine(PrintMap(map));
+        _progressOutput(PrintMap(map));
 
         return Task.FromResult(countCovered.ToString());
     }

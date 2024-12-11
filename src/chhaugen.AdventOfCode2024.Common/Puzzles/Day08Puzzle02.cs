@@ -10,7 +10,7 @@ public class Day08Puzzle02 : Puzzle
     public override async Task<string> SolveAsync(string inputString)
     {
         Map map = Map.Parse(inputString);
-        Console.WriteLine(map.PrintToString());
+        _progressOutput(map.PrintToString());
 
         foreach (var group in map.GetAntennaGroups())
         {
@@ -37,7 +37,7 @@ public class Day08Puzzle02 : Puzzle
                 }
             }
         }
-        Console.WriteLine(map.PrintToString());
+        _progressOutput(map.PrintToString());
 
         var antinodeCount = map.Count<Antinode>();
         var antenaeCount = map.Count<Antenna>();

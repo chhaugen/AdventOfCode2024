@@ -10,7 +10,7 @@ public class Day08Puzzle01 : Puzzle
     public override Task<string> SolveAsync(string inputString)
     {
         Map map = Map.Parse(inputString);
-        Console.WriteLine(map.PrintToString());
+        _progressOutput(map.PrintToString());
 
         foreach (var group in map.GetAntennaGroups())
         {
@@ -20,13 +20,13 @@ public class Day08Puzzle01 : Puzzle
                 {
                     if (firstAntenae.Point == secondAntenae.Point)
                         continue;
-                    //Console.WriteLine($"1. antenae {firstAntenae.Frequency} {firstAntenae.Point}");
-                    //Console.WriteLine($"2. antenae {secondAntenae.Frequency} {secondAntenae.Point}");
+                    //_progressOutput($"1. antenae {firstAntenae.Frequency} {firstAntenae.Point}");
+                    //_progressOutput($"2. antenae {secondAntenae.Frequency} {secondAntenae.Point}");
                     Vector vector = new(firstAntenae.Point, secondAntenae.Point);
-                    //Console.WriteLine($"Vector: {vector}");
-                    //Console.WriteLine($"Vector Length: {(int)vector.AbsoluteLength}");
+                    //_progressOutput($"Vector: {vector}");
+                    //_progressOutput($"Vector Length: {(int)vector.AbsoluteLength}");
                     Point antinodePoint = secondAntenae.Point.Add(vector);
-                    //Console.WriteLine($"Antinode {antinodePoint}");
+                    //_progressOutput($"Antinode {antinodePoint}");
                     if (map.HasPoint(antinodePoint))
                     {
                         Antinode antinode = new(antinodePoint);
@@ -35,7 +35,7 @@ public class Day08Puzzle01 : Puzzle
                 }
             }
         }
-        Console.WriteLine(map.PrintToString());
+        _progressOutput(map.PrintToString());
 
         var antinodeCount = map.Count<Antinode>();
 

@@ -20,7 +20,7 @@ public class Day10Puzzle01 : Puzzle
 
         //var nineCount = map.Count(number: 9);
 
-        //Console.WriteLine(TrialNode.PrintFlattendTrials(flattenedTrials));
+        //_progressOutput(TrialNode.PrintFlattendTrials(flattenedTrials));
 
         var scores = startingNodes
             .Select(x => x
