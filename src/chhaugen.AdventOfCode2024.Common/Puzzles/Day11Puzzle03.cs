@@ -10,29 +10,25 @@ public class Day11Puzzle03 : Puzzle
     {
     }
     public override Task<string> SolveAsync(string input)
-        => SolveAsync(input, times: 500);
+        => SolveAsync(input, times: 1500);
 
     public Task<string> SolveAsync(string input, int times)
     {
-        var initialStones = Day11Puzzle01.ParseInput(input);
+        var initialStones = Day11Puzzle01.ParseInput(input).ToArray();
 
-        ConcurrentBag<BigInteger> counts = [];
+        BigInteger[] counts = new BigInteger[initialStones.Length];
         ConcurrentDictionary<ulong, BigInteger> stoneCache = [];
         Stopwatch sw = Stopwatch.StartNew();
-        Parallel.ForEach(initialStones, stone =>
+        Parallel.For(0, initialStones.Length, stoneIndex =>
         {
-            var count = GetBlinkStonesCountCached(stone, times, stoneCache);
-            counts.Add(count);
+            counts[stoneIndex] = GetBlinkStonesCountCached(initialStones[stoneIndex], times, stoneCache);
         });
+
         BigInteger count = 0;
         foreach (var countStone in counts)
         {
             count += countStone;
         }
-        //foreach (var stone in initialStones)
-        //{
-        //    count += GetBlinkStonesCountCached(stone, times, stoneCache);
-        //}
         sw.Stop();
         _progressOutput($"Time used: {sw.ElapsedMilliseconds}ms");
 
