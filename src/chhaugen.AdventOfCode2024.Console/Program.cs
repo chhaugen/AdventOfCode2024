@@ -1,15 +1,13 @@
 ﻿using chhaugen.AdventOfCode2024.Common;
 using chhaugen.AdventOfCode2024.Common.Extentions;
 using chhaugen.AdventOfCode2024.Resources;
-using System.Reflection;
 using static System.Console;
 
 namespace chhaugen.AdventOfCode2024.Console;
 
 internal class Program
 {
-    public const string RESOURCES_DIRECTORY = "Resources";
-    static async Task Main(string[] args)
+    static async Task Main()
     {
 
         Action<string> progressOutput = WriteLine;
@@ -76,8 +74,4 @@ internal class Program
         WriteLine($"Puzzle {puzzleKeyValue.Value.Key} resulted in: {puzzleResult}");
 
     }
-
-    public static string ResourceDirectoryPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, RESOURCES_DIRECTORY);
-
-    public static DirectoryInfo ResourceDirectoryInfo = new(ResourceDirectoryPath);
 }

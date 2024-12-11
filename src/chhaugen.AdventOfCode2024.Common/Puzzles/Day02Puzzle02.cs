@@ -25,7 +25,7 @@ public class Day02Puzzle02 : Puzzle
     public static List<List<int>> ProblemDampnerTestSetGenerator(int[] report)
     {
         List<List<int>> variants = [];
-        variants.Add(report.ToList());
+        variants.Add([.. report]);
 
         for (int i = 0; i < report.Length; i++)
         {

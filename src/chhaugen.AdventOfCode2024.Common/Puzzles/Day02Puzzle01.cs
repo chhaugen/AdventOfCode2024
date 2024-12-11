@@ -8,7 +8,7 @@ public class Day02Puzzle01 : Puzzle
     {
     }
 
-    public override async Task<string> SolveAsync(string input)
+    public override Task<string> SolveAsync(string input)
     {
         var reports = ParseReports(input);
 
@@ -17,7 +17,7 @@ public class Day02Puzzle01 : Puzzle
 
         var safeReports = reports.Where(x => (x.AllIncreasing() || x.AllDecreasing()) && x.IsAdjacentValueDifferenceConstraintUpheld(minDifference: 1, maxDifference: 3));
 
-        return safeReports.Count().ToString();
+        return Task.FromResult(safeReports.Count().ToString());
     }
 
     public static List<int[]> ParseReports(string input)

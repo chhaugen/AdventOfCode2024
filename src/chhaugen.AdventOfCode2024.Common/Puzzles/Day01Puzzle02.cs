@@ -3,6 +3,7 @@
 namespace chhaugen.AdventOfCode2024.Common.Puzzles;
 public class Day01Puzzle02 : Puzzle
 {
+    private readonly JsonSerializerOptions _writeIndented = new() { WriteIndented = true };
     public Day01Puzzle02(Action<string>? progressOutput = null) : base(progressOutput)
     {
     }
@@ -15,7 +16,7 @@ public class Day01Puzzle02 : Puzzle
             .Where(leftColumn.Contains)
             .Select(x => leftColumn.Count(y => y == x) * x)
             .ToList();
-        var groupingsSerialized = JsonSerializer.Serialize(groupings, options: new JsonSerializerOptions() { WriteIndented = true });
+        var groupingsSerialized = JsonSerializer.Serialize(groupings, _writeIndented);
         _progressOutput(groupingsSerialized);
 
         var similarityScore = groupings.Sum();

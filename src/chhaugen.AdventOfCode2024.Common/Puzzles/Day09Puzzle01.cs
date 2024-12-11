@@ -7,7 +7,7 @@ public class Day09Puzzle01 : Puzzle
     {
     }
 
-    public override async Task<string> SolveAsync(string inputString)
+    public override Task<string> SolveAsync(string inputString)
     {
         Disk disk = Disk.ParseInput(inputString);
         _progressOutput(disk.PrintDiskLayout());
@@ -16,7 +16,7 @@ public class Day09Puzzle01 : Puzzle
 
         var checksum = disk.CalculateChecksum();
 
-        return checksum.ToString();
+        return Task.FromResult(checksum.ToString());
     }
 
 

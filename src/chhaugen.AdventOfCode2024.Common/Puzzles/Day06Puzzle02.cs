@@ -8,7 +8,7 @@ public class Day06Puzzle02 : Puzzle
     {
     }
 
-    public override async Task<string> SolveAsync(string inputString)
+    public override Task<string> SolveAsync(string inputString)
     {
         var map = ParseInput(inputString);
 
@@ -48,7 +48,7 @@ public class Day06Puzzle02 : Puzzle
 
         _progressOutput($"Calculations took {sw.ElapsedMilliseconds}ms");
 
-        return countLooped.ToString();
+        return Task.FromResult(countLooped.ToString());
     }
 
     private static bool GuardWillLoop(MapFeature[,] newObstructionMap)

@@ -7,7 +7,7 @@ public class Day08Puzzle02 : Puzzle
     {
     }
 
-    public override async Task<string> SolveAsync(string inputString)
+    public override Task<string> SolveAsync(string inputString)
     {
         Map map = Map.Parse(inputString);
         _progressOutput(map.PrintToString());
@@ -42,6 +42,6 @@ public class Day08Puzzle02 : Puzzle
         var antinodeCount = map.Count<Antinode>();
         var antenaeCount = map.Count<Antenna>();
 
-        return (antinodeCount + antenaeCount).ToString();
+        return Task.FromResult((antinodeCount + antenaeCount).ToString());
     }
 }

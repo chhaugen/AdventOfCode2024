@@ -7,7 +7,7 @@ public class Day10Puzzle02 : Puzzle
     {
     }
 
-    public override async Task<string> SolveAsync(string inputString)
+    public override Task<string> SolveAsync(string inputString)
     {
         TrialMap map = TrialMap.ParseInput(inputString);
 
@@ -22,6 +22,6 @@ public class Day10Puzzle02 : Puzzle
 
         var totalScore = scores.Sum(x => x.Count);
 
-        return totalScore.ToString();
+        return Task.FromResult(totalScore.ToString());
     }
 }
