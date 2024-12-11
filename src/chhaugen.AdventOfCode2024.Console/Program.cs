@@ -36,6 +36,10 @@ internal class Program
         {
             puzzleKeyValue = new(userInput, userInputPuzzle);
         }
+        else if (string.IsNullOrWhiteSpace(userInput))
+        {
+            puzzleKeyValue = puzzles.Last();
+        }
         else
         {
             throw new InvalidOperationException($"Puzzle {userInput} not found");
