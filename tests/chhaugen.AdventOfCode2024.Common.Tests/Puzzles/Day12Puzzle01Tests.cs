@@ -42,51 +42,51 @@ public class Day12Puzzle01Tests
         Assert.Equal(correctOutput, output);
     }
 
-    //[Fact]
-    //public async Task SolveAsync_UsingRealInput()
-    //{
-    //    // Arrange
-    //    Day12Puzzle01 puzzle = new(_output.WriteLine);
-    //    string input = await _inputs.GetInputAsync(day: 12, "input.txt");
-    //    string correctOutput = 2166959.ToString();
-    //    // Act
-    //    string output = await puzzle.SolveAsync(input);
-    //    // Assert
-    //    Assert.Equal(correctOutput, output);
-    //}
-
     [Fact]
-    public void GetSpiralInwardsPoints_UsingExampleInput()
+    public async Task SolveAsync_UsingRealInput()
     {
         // Arrange
-        string input = string.Join('\n', Enumerable.Range(0, 4).Select(x => "QQQQ"));
-        Day12Puzzle01.Map<char> map = Day12Puzzle01.ParseInput(input);
-        List<Point<char>> expected = [
-            map.GetPoint(0,0),
-            map.GetPoint(0,1),
-            map.GetPoint(0,2),
-            map.GetPoint(0,3),
-            map.GetPoint(1,3),
-            map.GetPoint(2,3),
-            map.GetPoint(3,3),
-            map.GetPoint(3,2),
-            map.GetPoint(3,1),
-            map.GetPoint(3,0),
-            map.GetPoint(2,0),
-            map.GetPoint(1,0),
-            map.GetPoint(1,1),
-            map.GetPoint(1,2),
-            map.GetPoint(2,2),
-            map.GetPoint(2,1),
-            ];
-
+        Day12Puzzle01 puzzle = new(_output.WriteLine);
+        string input = await _inputs.GetInputAsync(day: 12, "input.txt");
+        string correctOutput = 1457298.ToString();
         // Act
-        var result = map
-            .GetSpiralInwardsPoints()
-            .Take(expected.Count)
-            .ToList();
-
+        string output = await puzzle.SolveAsync(input);
         // Assert
-        Assert.Equal(expected, result);
+        Assert.Equal(correctOutput, output);
     }
+
+    //[Fact]
+    //public void GetSpiralInwardsPoints_UsingExampleInput()
+    //{
+    //    // Arrange
+    //    string input = string.Join('\n', Enumerable.Range(0, 4).Select(x => "QQQQ"));
+    //    Day12Puzzle01.Map<char> map = Day12Puzzle01.ParseInput(input);
+    //    List<Point<char>> expected = [
+    //        map.GetPoint(0,0),
+    //        map.GetPoint(0,1),
+    //        map.GetPoint(0,2),
+    //        map.GetPoint(0,3),
+    //        map.GetPoint(1,3),
+    //        map.GetPoint(2,3),
+    //        map.GetPoint(3,3),
+    //        map.GetPoint(3,2),
+    //        map.GetPoint(3,1),
+    //        map.GetPoint(3,0),
+    //        map.GetPoint(2,0),
+    //        map.GetPoint(1,0),
+    //        map.GetPoint(1,1),
+    //        map.GetPoint(1,2),
+    //        map.GetPoint(2,2),
+    //        map.GetPoint(2,1),
+    //        ];
+
+    //    // Act
+    //    var result = map
+    //        .GetSpiralInwardsPoints()
+    //        .Take(expected.Count)
+    //        .ToList();
+
+    //    // Assert
+    //    Assert.Equal(expected, result);
+    //}
 }

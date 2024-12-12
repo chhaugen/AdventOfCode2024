@@ -22,4 +22,14 @@ public static class CardinalDirectionExtentions
             CardinalDirection.South => CardinalDirection.East,
             _ => throw new NotImplementedException(),
         };
+
+    public static Axis GetAxis(this CardinalDirection direction)
+        => direction switch
+        {
+            CardinalDirection.West => Axis.Y,
+            CardinalDirection.North => Axis.X,
+            CardinalDirection.East => Axis.Y,
+            CardinalDirection.South => Axis.X,
+            _ => throw new NotImplementedException(),
+        };
 }

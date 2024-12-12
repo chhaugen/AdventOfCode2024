@@ -69,6 +69,17 @@ public class Point<T> : IEquatable<Point<T>>
         return count;
     }
 
+    public IEnumerable<CardinalDirection> GetEdgeDirections()
+    {
+        T pointValue = Value;
+        foreach (var direction in Enum.GetValues<CardinalDirection>())
+        {
+            var directionPoint = GetPointInCardinalDirection(direction);
+            if (!directionPoint.ExistsOnMap || !(directionPoint.Value?.Equals(pointValue) ?? false))
+                yield return direction;
+        }
+    }
+
     public bool Equals(Point<T>? other)
         => other?.X == X && other?.Y == Y;
 
