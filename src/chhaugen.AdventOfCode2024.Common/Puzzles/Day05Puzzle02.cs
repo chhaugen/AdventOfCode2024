@@ -44,11 +44,14 @@ public class Day05Puzzle02 : Puzzle
 
         public int Compare(int x, int y)
         {
-            if (IsUpdateFollowingRules([x, y], Rules))
-                return 1;
-            else if (IsUpdateFollowingRules([y, x], Rules))
+            if (x == y)
+                return 0;
+
+            var firstRuleLookup = Rules.FirstOrDefault(r => r.PageBefore == x && r.PageAfter == y);
+            if (firstRuleLookup != default)
                 return -1;
-            else throw new InvalidOperationException("wtf");
+            else
+                return 1;
         }
     }
 
