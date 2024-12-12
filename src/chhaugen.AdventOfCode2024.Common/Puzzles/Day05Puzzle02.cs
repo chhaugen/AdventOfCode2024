@@ -110,7 +110,7 @@ public class Day05Puzzle02 : Puzzle
     //    {
     //        MaxDegreeOfParallelism = -1,
     //    };
-    //    Parallel.ForEach(source: permutation, parallelOptions: parallelOptions, body: (s, pls) =>
+    //    Parallel.ForEachPoint(source: permutation, parallelOptions: parallelOptions, body: (s, pls) =>
     //    {
     //        List<int> perm = [.. s];
     //        if (IsUpdateFollowingRules(perm, rules))

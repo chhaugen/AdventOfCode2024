@@ -9,11 +9,11 @@
   </PropertyGroup>
 
 	<ItemGroup>
-		<InternalsVisibleTo Include="$(AssemblyName).Tests"/>
+		<InternalsVisibleTo Include="$(AssemblyName).Tests" />
 	</ItemGroup>
 
   <ItemGroup>
-	  <EmbeddedResource Include="PuzzleInputs\**\*.*"/>
+	  <EmbeddedResource Include="PuzzleInputs\**\*.*" />
   </ItemGroup>
 
 </Project>
