@@ -60,8 +60,8 @@ public class Day12Puzzle01Tests
     //{
     //    // Arrange
     //    string input = string.Join('\n', Enumerable.Range(0, 4).Select(x => "QQQQ"));
-    //    Day12Puzzle01.Map<char> map = Day12Puzzle01.ParseInput(input);
-    //    List<Point<char>> expected = [
+    //    Day12Puzzle01.Map2D<char> map = Day12Puzzle01.ParseInput(input);
+    //    List<Point2D<char>> expected = [
     //        map.GetPoint(0,0),
     //        map.GetPoint(0,1),
     //        map.GetPoint(0,2),

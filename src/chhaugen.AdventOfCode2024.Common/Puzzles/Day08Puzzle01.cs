@@ -20,8 +20,8 @@ public class Day08Puzzle01 : Puzzle
                 {
                     if (firstAntenae.Point == secondAntenae.Point)
                         continue;
-                    //_progressOutput($"1. antenae {firstAntenae.Frequency} {firstAntenae.Point}");
-                    //_progressOutput($"2. antenae {secondAntenae.Frequency} {secondAntenae.Point}");
+                    //_progressOutput($"1. antenae {firstAntenae.Frequency} {firstAntenae.Point2D}");
+                    //_progressOutput($"2. antenae {secondAntenae.Frequency} {secondAntenae.Point2D}");
                     Vector vector = new(firstAntenae.Point, secondAntenae.Point);
                     //_progressOutput($"Vector: {vector}");
                     //_progressOutput($"Vector Length: {(int)vector.AbsoluteLength}");

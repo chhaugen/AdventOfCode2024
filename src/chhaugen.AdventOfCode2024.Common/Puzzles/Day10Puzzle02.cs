@@ -1,4 +1,6 @@
-﻿using static chhaugen.AdventOfCode2024.Common.Puzzles.Day10Puzzle01;
+﻿using chhaugen.AdventOfCode2024.Common.Structures;
+using System.Globalization;
+using static chhaugen.AdventOfCode2024.Common.Puzzles.Day10Puzzle01;
 
 namespace chhaugen.AdventOfCode2024.Common.Puzzles;
 public class Day10Puzzle02 : Puzzle
@@ -9,9 +11,9 @@ public class Day10Puzzle02 : Puzzle
 
     public override Task<string> SolveAsync(string inputString)
     {
-        TrialMap map = TrialMap.ParseInput(inputString);
+        Map2D<ushort> map = Map2D<ushort>.ParseInput(inputString, x => (ushort)CharUnicodeInfo.GetDigitValue(x));
 
-        var startingNodes = map.GetPossibleStaringNodes();
+        var startingNodes = GetPossibleStaringNodes(map);
 
         var scores = startingNodes
             .Select(x => x

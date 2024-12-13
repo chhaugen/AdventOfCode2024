@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using chhaugen.AdventOfCode2024.Common.Structures;
+using System.Text;
 
 namespace chhaugen.AdventOfCode2024.Common.Puzzles;
 public class Day10Puzzle01 : Puzzle
@@ -10,13 +11,13 @@ public class Day10Puzzle01 : Puzzle
     public override Task<string> SolveAsync(string inputString)
     {
 
-        TrialMap map = TrialMap.ParseInput(inputString);
+        Map2D<ushort> map = ParseInput(inputString);
 
-        var startingNodes = map.GetPossibleStaringNodes();
+        var startingNodes = GetPossibleStaringNodes(map);
 
         //var flattenedTrials = TrialNode
         //    .FlattenTrials(startingNodes)
-        //    .Where(x => x.Select(x => x.Point.Value).First() == 9);
+        //    .Where(x => x.Select(x => x.Point2D.Value).First() == 9);
 
         //var nineCount = map.Count(number: 9);
 
@@ -26,7 +27,7 @@ public class Day10Puzzle01 : Puzzle
             .Select(x => x
                 .GetLeafs()
                 .Where(y => y.Point.Value == 9)
-                .DistinctBy(x => (x.Point.X, x.Point.Y))
+                .DistinctBy(x => x.Point)
                 .ToList())
             .ToList();
 
@@ -34,155 +35,51 @@ public class Day10Puzzle01 : Puzzle
 
         return Task.FromResult(totalScore.ToString());
     }
+    
+    public static IEnumerable<TrialNode> GetPossibleStaringNodes(Map2D<ushort> map)
+        => map
+        .AsPointEnumerable()
+        .Where(x => x.Value == 0)
+        .Select(x => new TrialNode(x));
 
-    public class TrialMap
+
+    public static IEnumerable<Point2D<ushort>> ScanForPosibleTrialContinuation(Point2D<ushort> point)
     {
-        private readonly ushort[,] _map;
-        private readonly int _xLength;
-        private readonly int _yLength;
-
-        private TrialMap(ushort[,] map)
+        var currentValue = point.Value;
+        foreach (var direction in Enum.GetValues<CardinalDirection>())
         {
-            _map = map;
-            _xLength = map.GetLength(0);
-            _yLength = map.GetLength(1);
-        }
-
-        public List<TrialNode> GetPossibleStaringNodes()
-        {
-            List<TrialNode> points = [];
-            for (int x = 0; x < _xLength; x++)
-            {
-                for (int y = 0; y < _yLength; y++)
-                {
-                    ushort value = _map[x, y];
-                    if (value == 0)
-                        points.Add(new TrialNode(new(this, x, y)));
-                }
-            }
-            return points;
-        }
-
-        public ushort this[int x, int y]
-        {
-            get => _map[x, y];
-            set => _map[x, y] = value;
-        }
-
-        public ushort this[MapPoint point]
-        {
-            get => _map[point.X, point.Y];
-            set => _map[point.X, point.Y] = value;
-        }
-
-        public bool IsPointOnMap(int x, int y)
-            => 0 <= x && x < _xLength && 0 <= y && y < _yLength;
-
-        public bool IsPointOnMap(MapPoint point)
-            => IsPointOnMap(point.X, point.Y);
-
-        public int Count(ushort number)
-        {
-            int count = 0;
-            for (int x = 0; x < _xLength; x++)
-            {
-                for (int y = 0; y < _yLength; y++)
-                {
-                    if (number == _map[x, y])
-                        count++;
-                }
-            }
-            return count;
-        }
-
-        public static TrialMap ParseInput(string input)
-        {
-            var lines = input
-                .Split('\n', StringSplitOptions.RemoveEmptyEntries);
-
-            int yLength = lines.Length;
-            int xLength = lines[0].Length;
-
-            ushort[,] map = new ushort[xLength, yLength];
-
-            for (int y = 0; y < yLength; y++)
-            {
-                var line = lines[y];
-                for (int x = 0; x < xLength; x++)
-                {
-                    ReadOnlySpan<char> charSpan = line.AsSpan(x, 1);
-                    map[x, y] = ushort.Parse(charSpan);
-                }
-            }
-            return new TrialMap(map);
+            var possibleNeighbor = point.GetPointInDirection(direction);
+            if (possibleNeighbor.IsOnMap && possibleNeighbor.Value == currentValue +1)
+                yield return possibleNeighbor;
         }
     }
 
-    public readonly struct MapPoint
+    public static Map2D<ushort> ParseInput(string input)
     {
-        private readonly TrialMap _map;
+        var lines = input
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
-        public MapPoint(TrialMap map, int x, int y)
+        int yLength = lines.Length;
+        int xLength = lines[0].Length;
+
+        ushort[,] map = new ushort[xLength, yLength];
+
+        for (int y = 0; y < yLength; y++)
         {
-            _map = map;
-            (X, Y) = (x, y);
-        }
-
-        public int X { get; }
-
-        public int Y { get; }
-
-        public MapPoint West
-            => new(_map, X - 1, Y);
-        public MapPoint North
-            => new(_map, X, Y - 1);
-        public MapPoint East
-            => new(_map, X + 1, Y);
-        public MapPoint South
-            => new(_map, X, Y + 1);
-
-        public ushort Value
-            => _map[this];
-
-        public bool IsOnMap
-            => _map.IsPointOnMap(this);
-
-        public IEnumerable<MapPoint> ScanForPosibleTrialContinuation()
-        {
-            var currentValue = Value;
-
+            var line = lines[y];
+            for (int x = 0; x < xLength; x++)
             {
-                var west = West;
-                if (west.IsOnMap && west.Value == currentValue + 1)
-                    yield return west;
-            }
-
-            {
-                var north = North;
-                if (north.IsOnMap && north.Value == currentValue + 1)
-                    yield return north;
-            }
-
-            {
-                var east = East;
-                if (east.IsOnMap && east.Value == currentValue + 1)
-                    yield return east;
-            }
-
-            {
-                var south = South;
-                if (south.IsOnMap && south.Value == currentValue + 1)
-                    yield return south;
+                ReadOnlySpan<char> charSpan = line.AsSpan(x, 1);
+                map[x, y] = ushort.Parse(charSpan);
             }
         }
-
-        public override string ToString()
-            => $"({X}, {Y})";
+        return new(map);
     }
+
 
     public class TrialNode
     {
-        public TrialNode(MapPoint mapPoint, TrialNode? parrent = null)
+        public TrialNode(Point2D<ushort> mapPoint, TrialNode? parrent = null)
         {
             Point = mapPoint;
             Parrent = parrent;
@@ -190,10 +87,10 @@ public class Day10Puzzle01 : Puzzle
 
         public TrialNode? Parrent { get; }
 
-        public MapPoint Point { get; }
+        public Point2D<ushort> Point { get; }
 
-        public IEnumerable<TrialNode> Children => Point
-            .ScanForPosibleTrialContinuation()
+        public IEnumerable<TrialNode> Children
+            => ScanForPosibleTrialContinuation(Point)
             .Select(x => new TrialNode(x, this));
 
         public bool IsLeaf => !Children.Any();

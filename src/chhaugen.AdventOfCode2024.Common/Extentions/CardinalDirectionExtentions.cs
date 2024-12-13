@@ -23,13 +23,23 @@ public static class CardinalDirectionExtentions
             _ => throw new NotImplementedException(),
         };
 
-    public static Axis GetAxis(this CardinalDirection direction)
+    public static PrincipalWind ToPrincipalWind(this CardinalDirection direction)
         => direction switch
         {
-            CardinalDirection.West => Axis.Y,
-            CardinalDirection.North => Axis.X,
-            CardinalDirection.East => Axis.Y,
-            CardinalDirection.South => Axis.X,
+            CardinalDirection.North => PrincipalWind.North,
+            CardinalDirection.East  => PrincipalWind.East ,
+            CardinalDirection.South => PrincipalWind.South,
+            CardinalDirection.West  => PrincipalWind.West ,
+            _ => throw new NotImplementedException(),
+        };
+
+    public static Axis2D ToAxis(this CardinalDirection direction)
+        => direction switch
+        {
+            CardinalDirection.West => Axis2D.Y,
+            CardinalDirection.North => Axis2D.X,
+            CardinalDirection.East => Axis2D.Y,
+            CardinalDirection.South => Axis2D.X,
             _ => throw new NotImplementedException(),
         };
 }

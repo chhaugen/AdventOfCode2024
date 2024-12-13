@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using chhaugen.AdventOfCode2024.Common.Structures;
+using System.Diagnostics;
 using static chhaugen.AdventOfCode2024.Common.Puzzles.Day06Puzzle01;
 
 namespace chhaugen.AdventOfCode2024.Common.Puzzles;
@@ -10,10 +11,10 @@ public class Day06Puzzle02 : Puzzle
 
     public override Task<string> SolveAsync(string inputString)
     {
-        var map = ParseInput(inputString);
+        var map = Map2D.ParseInput(inputString);
 
         var initialGuard = FindGuard(map);
-        List<Point> coveredPoints = GetPointsOfPlayedMap(map, initialGuard)
+        List<Point2D<char>> coveredPoints = GetPointsOfPlayedMap(map, initialGuard)
             .Where(x => x != initialGuard.Point)
             .ToList();
 
@@ -21,7 +22,7 @@ public class Day06Puzzle02 : Puzzle
 
         Stopwatch sw = Stopwatch.StartNew();
 
-        IEnumerable<MapFeature[,]> mapVariations = NewObstructionInPathVariations(map, coveredPoints);
+        IEnumerable<Map2D<char>> mapVariations = NewObstructionInPathVariations(map, coveredPoints);
         Parallel.ForEach(mapVariations, (newObstructionMap) =>
         {
             if (GuardWillLoop(newObstructionMap))
@@ -51,7 +52,7 @@ public class Day06Puzzle02 : Puzzle
         return Task.FromResult(countLooped.ToString());
     }
 
-    private static bool GuardWillLoop(MapFeature[,] newObstructionMap)
+    private static bool GuardWillLoop(Map2D<char> newObstructionMap)
     {
         Guard? guard = FindGuard(newObstructionMap);
         HashSet<Guard> previousGuardPositions = [];
@@ -77,41 +78,29 @@ public class Day06Puzzle02 : Puzzle
         return guardLooped;
     }
 
-    private static List<Point> GetPointsOfPlayedMap(MapFeature[,] map, Guard initialGuard)
+    private IEnumerable<Point2D<char>> GetPointsOfPlayedMap(Map2D<char> map, Guard initialGuard)
     {
-        MapFeature[,] mapCopy = (MapFeature[,])map.Clone();
-        PlayGuard(new(mapCopy, initialGuard.Point));
+        Map2D<char> mapCopy = map.Clone();
+        int guardX = initialGuard.Point.X;
+        int guardY = initialGuard.Point.Y;
+        var newPoint = mapCopy.GetPoint(guardX, guardY);
+        initialGuard = new(newPoint);
+        PlayGuard(initialGuard, () => _progressOutput(mapCopy.PrintMap()));
+        Thread.Sleep(1);
 
-        var coveredPoints = GetPoints(mapCopy, MapFeature.Covered);
+        var coveredPoints = mapCopy.AsPointEnumerable().Where(x => x.Value == 'X');
         return coveredPoints;
     }
 
-    public static IEnumerable<MapFeature[,]> NewObstructionInPathVariations(MapFeature[,] map, IEnumerable<Point> coveredPoints)
+    public static IEnumerable<Map2D<char>> NewObstructionInPathVariations(Map2D<char> map, IEnumerable<Point2D<char>> coveredPoints)
     {
         foreach (var coveredPoint in coveredPoints)
         {
-            if (coveredPoint.GetFeature(map) == MapFeature.Covered)
+            if (map[coveredPoint] != 'X')
                 continue;
-            MapFeature[,] mapCopy = (MapFeature[,])map.Clone();
-            coveredPoint.SetFeature(mapCopy, MapFeature.Obstruction);
+            Map2D<char> mapCopy = map.Clone();
+            mapCopy[coveredPoint] = '#';
             yield return mapCopy;
         }
-    }
-
-    public static List<Point> GetPoints(MapFeature[,] map, MapFeature mapFeature)
-    {
-        int xCount = map.GetLength(0);
-        int yCount = map.GetLength(1);
-        List<Point> points = [];
-        for (int y = 0; y < yCount; y++)
-        {
-            for (int x = 0; x < xCount; x++)
-            {
-                MapFeature feature = map[x, y];
-                if (feature == mapFeature)
-                    points.Add(new Point(x, y));
-            }
-        }
-        return points;
     }
 }

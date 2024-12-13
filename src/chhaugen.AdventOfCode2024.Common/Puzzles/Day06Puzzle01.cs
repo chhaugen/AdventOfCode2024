@@ -1,4 +1,7 @@
-﻿using System.Text;
+﻿using chhaugen.AdventOfCode2024.Common.Extentions;
+using chhaugen.AdventOfCode2024.Common.Structures;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace chhaugen.AdventOfCode2024.Common.Puzzles;
 public class Day06Puzzle01 : Puzzle
@@ -9,309 +12,109 @@ public class Day06Puzzle01 : Puzzle
 
     public override Task<string> SolveAsync(string inputString)
     {
-        var map = ParseInput(inputString);
-        _progressOutput(PrintMap(map));
+        var map = Map2D.ParseInput(inputString);
+        _progressOutput(map.PrintMap());
 
         var guard = FindGuard(map);
-        PlayGuard(guard);
+        PlayGuard(guard, () => { });
 
-        int countCovered = Count(map, MapFeature.Covered);
+        int countCovered = map.CountOf('X');
 
-        _progressOutput(PrintMap(map));
+        _progressOutput(map.PrintMap());
 
         return Task.FromResult(countCovered.ToString());
     }
 
-    public static void PlayGuard(Guard guard)
+    public static void PlayGuard(Guard guard, Action action)
     {
         bool guardIsGone = false;
-        Guard? internalGuard = guard.Clone();
+        Guard? internalGuard = guard;
         while (!guardIsGone)
         {
             if (internalGuard.HasValue)
                 internalGuard = internalGuard.Value.PlayOneStep();
             else
                 guardIsGone = true;
+            action();
         }
     }
 
-    public static MapFeature[,] ParseInput(string input)
-    {
-        var lines = input
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
-            .Select(x => x.Select(CharToMapFeature).ToList())
-            .ToList();
-
-        int yCount = lines.Count;
-        int xCount = lines[0].Count;
-        MapFeature[,] map = new MapFeature[xCount, yCount];
-        for (int y = 0; y < yCount; y++)
+    public static CardinalDirection GuardCharToDirection(char guard)
+        => guard switch
         {
-            for (int x = 0; x < xCount; x++)
-            {
-                map[x, y] = lines[y][x];
-            }
-        }
-        return map;
-    }
-
-    public static Guard FindGuard(MapFeature[,] map)
-    {
-        int xCount = map.GetLength(0);
-        int yCount = map.GetLength(1);
-        for (int y = 0; y < yCount; y++)
-        {
-            for (int x = 0; x < xCount; x++)
-            {
-                MapFeature feature = map[x, y];
-                switch (feature)
-                {
-                    case MapFeature.GuardLookingWest:
-                    case MapFeature.GuardLookingNorth:
-                    case MapFeature.GuardLookingEast:
-                    case MapFeature.GuardLookingSouth:
-                        return new(map, new(x, y));
-                }
-            }
-        }
-        throw new InvalidOperationException("Guard not found");
-    }
-
-    public static MapFeature CharToMapFeature(char @char)
-        => @char switch
-        {
-            '.' => MapFeature.Empty,
-            '#' => MapFeature.Obstruction,
-            '<' => MapFeature.GuardLookingWest,
-            '^' => MapFeature.GuardLookingNorth,
-            '>' => MapFeature.GuardLookingWest,
-            'v' => MapFeature.GuardLookingSouth,
-            _ => throw new InvalidOperationException($"This char appeared: {@char}")
+            '^' => CardinalDirection.North,
+            '>' => CardinalDirection.East,
+            'v' => CardinalDirection.South,
+            '<' => CardinalDirection.West,
+            _ => throw new NotImplementedException(),
         };
 
-    public static bool IsPointOnMap(Point point, MapFeature[,] map)
+    public static char DirectionToGuardChar(CardinalDirection direction)
+        => direction switch
+        {
+            CardinalDirection.North => '^',
+            CardinalDirection.East  => '>',
+            CardinalDirection.South => 'v',
+            CardinalDirection.West  => '<',
+            _ => throw new NotImplementedException(),
+        };
+
+    public static Guard FindGuard(Map2D<char> map)
+        => new(map
+            .AsPointEnumerable()
+            .First(x => x.Value is '<' or '^' or '>' or 'v'));
+
+
+
+    public readonly struct Guard : IEquatable<Guard>
     {
-        int xCount = map.GetLength(0);
-        int yCount = map.GetLength(1);
-        bool withinX = 0 <= point.X && point.X < xCount;
-        bool withinY = 0 <= point.Y && point.Y < yCount;
-        return withinX && withinY;
-    }
 
-    public static int Count(MapFeature[,] map, MapFeature mapFeature)
-    {
-        int xCount = map.GetLength(0);
-        int yCount = map.GetLength(1);
-        int count = 0;
-        for (int y = 0; y < yCount; y++)
+        public Guard(Point2D<char> point)
         {
-            for (int x = 0; x < xCount; x++)
-            {
-                MapFeature feature = map[x, y];
-                if (feature == mapFeature)
-                    count++;
-            }
-        }
-        return count;
-    }
-
-    public static string PrintMap(MapFeature[,] map)
-    {
-        StringBuilder sb = new();
-        int xCount = map.GetLength(0);
-        int yCount = map.GetLength(1);
-        for (int y = 0; y < yCount; y++)
-        {
-            for (int x = 0; x < xCount; x++)
-            {
-                MapFeature feature = map[x, y];
-                char @char = feature switch
-                {
-                    MapFeature.Empty => '.',
-                    MapFeature.Obstruction => '#',
-                    MapFeature.GuardLookingWest => '<',
-                    MapFeature.GuardLookingNorth => '^',
-                    MapFeature.GuardLookingEast => '>',
-                    MapFeature.GuardLookingSouth => 'v',
-                    MapFeature.Covered => 'X',
-                    _ => '?'
-                };
-                sb.Append(@char);
-            }
-            sb.AppendLine();
-        }
-        return sb.ToString();
-    }
-
-    public enum MapFeature
-    {
-        Empty, // .
-        Obstruction, // #
-        GuardLookingWest, // <
-        GuardLookingNorth, // ^
-        GuardLookingEast, // >
-        GuardLookingSouth, // v
-        Covered, // X
-    }
-
-    public readonly struct Point : IEquatable<Point>
-    {
-        public Point(int x, int y)
-        {
-            (X, Y) = (x, y);
-        }
-        public int X { get; }
-        public int Y { get; }
-
-        public Point West
-            => new(X - 1, Y);
-        public Point North
-            => new(X, Y - 1);
-        public Point East
-            => new(X + 1, Y);
-        public Point South
-            => new(X, Y + 1);
-
-        public bool Equals(Point other)
-            => other.X == X && other.Y == Y;
-
-        public MapFeature GetFeature(MapFeature[,] map)
-            => map[X, Y];
-        public void SetFeature(MapFeature[,] map, MapFeature newFeature)
-            => map[X, Y] = newFeature;
-
-        public override bool Equals(object? obj)
-        {
-            if (obj is Point other)
-                return Equals(other);
-            else
-                throw new InvalidOperationException("Cannot compare non point objects");
-        }
-
-        public static bool operator ==(Point left, Point right)
-        {
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(Point left, Point right)
-        {
-            return !(left == right);
-        }
-
-        public override int GetHashCode()
-        {
-            return X.GetHashCode() ^ Y.GetHashCode();
-        }
-    }
-
-    public readonly struct Guard : ICloneable, IEquatable<Guard>
-    {
-        private readonly MapFeature[,] _map;
-
-        public Guard(MapFeature[,] map, Point point)
-        {
-            switch (point.GetFeature(map))
-            {
-                case MapFeature.GuardLookingWest:
-                case MapFeature.GuardLookingNorth:
-                case MapFeature.GuardLookingEast:
-                case MapFeature.GuardLookingSouth:
-                    break;
-                default:
-                    throw new InvalidOperationException("MapFeature not a guard!");
-            }
-            _map = map;
             Point = point;
+            Direction = GuardCharToDirection(Point.Value);
         }
 
-        public MapFeature Feature => Point.GetFeature(_map);
+        public Point2D<char> Point { get; }
 
-        public Point Point { get; }
-
-        public Point PointInfront => Feature switch
-        {
-            MapFeature.GuardLookingWest => Point.West,
-            MapFeature.GuardLookingNorth => Point.North,
-            MapFeature.GuardLookingEast => Point.East,
-            MapFeature.GuardLookingSouth => Point.South,
-            _ => throw new InvalidOperationException("MapFeature not a guard!"),
-        };
-
-        public MapFeature FeatureInFront => PointInfront.GetFeature(_map);
+        public CardinalDirection Direction { get; }
 
         public Guard Turn90Degrees()
         {
-            switch (Feature)
-            {
-                case MapFeature.GuardLookingWest:
-                    Point.SetFeature(_map, MapFeature.GuardLookingNorth);
-                    break;
-                case MapFeature.GuardLookingNorth:
-                    Point.SetFeature(_map, MapFeature.GuardLookingEast);
-                    break;
-                case MapFeature.GuardLookingEast:
-                    Point.SetFeature(_map, MapFeature.GuardLookingSouth);
-                    break;
-                case MapFeature.GuardLookingSouth:
-                    Point.SetFeature(_map, MapFeature.GuardLookingWest);
-                    break;
-                default:
-                    throw new InvalidOperationException("MapFeature not a guard!");
-            }
-            return this;
+            var currentDirection = Direction;
+            var newDirection = Direction.TurnClockwise();
+            Point.Value = DirectionToGuardChar(newDirection);
+            return new(Point);
         }
 
         public Guard MoveForward()
         {
-            Point newPoint;
-            switch (Feature)
-            {
-                case MapFeature.GuardLookingWest:
-                    newPoint = Point.West;
-                    newPoint.SetFeature(_map, MapFeature.GuardLookingWest);
-                    break;
-                case MapFeature.GuardLookingNorth:
-                    newPoint = Point.North;
-                    newPoint.SetFeature(_map, MapFeature.GuardLookingNorth);
-                    break;
-                case MapFeature.GuardLookingEast:
-                    newPoint = Point.East;
-                    newPoint.SetFeature(_map, MapFeature.GuardLookingEast);
-                    break;
-                case MapFeature.GuardLookingSouth:
-                    newPoint = Point.South;
-                    newPoint.SetFeature(_map, MapFeature.GuardLookingSouth);
-                    break;
-                default:
-                    throw new InvalidOperationException("MapFeature not a guard!");
-            }
-            Point.SetFeature(_map, MapFeature.Covered);
-            return new(_map, newPoint);
+            Point2D<char> newPoint = Point.GetPointInDirection(Direction);
+            newPoint.Value = Point.Value;
+            Point.Value = 'X';
+            return new(newPoint);
         }
 
         public Guard? PlayOneStep()
         {
+            var pointInFront = Point.GetPointInDirection(Direction);
             // Guard left the map
-            if (!IsPointOnMap(PointInfront, _map))
+            if (!pointInFront.IsOnMap)
             {
-                Point.SetFeature(_map, MapFeature.Covered);
+                Point.Value = 'X';
                 return null;
             }
 
-            if (FeatureInFront == MapFeature.Obstruction)
+            if (pointInFront.Value == '#')
                 return Turn90Degrees();
 
             return MoveForward();
         }
 
-        public Guard Clone()
-            => new(_map, Point);
-
-        object ICloneable.Clone()
-            => Clone();
-
         public bool Equals(Guard other)
-            => Point == other.Point && Feature == other.Feature;
+        {
+            return Direction == other.Direction && Point == other.Point;
+        }
 
         public override bool Equals(object? obj)
             => obj is Guard guard && Equals(guard);
@@ -328,18 +131,18 @@ public class Day06Puzzle01 : Puzzle
 
         public override int GetHashCode()
         {
-            return Point.GetHashCode() ^ Feature.GetHashCode();
+            return HashCode.Combine(Direction.GetHashCode(), Point.GetHashCode());
         }
     }
 
     #region Don't think about it
-    //public static Point? MoveGuard(Point guardPoint, MapFeature[,] map)
+    //public static Point2D? MoveGuard(Point2D guardPoint, MapFeature[,] map)
     //{
     //    MapFeature guard = guardPoint.GetFeature(map);
     //    switch (guard)
     //    {
     //        case MapFeature.GuardLookingWest:
-    //            Point infrontWest = guardPoint.West;
+    //            Point2D infrontWest = guardPoint.West;
     //            if (!IsCoordinateOnMap(infrontWest, map))
     //            {
     //                guardPoint.SetFeature(map, MapFeature.Covered);
@@ -348,7 +151,7 @@ public class Day06Puzzle01 : Puzzle
     //            MapFeature infrontWestFeature = infrontWest.GetFeature(map);
     //            if(infrontWestFeature == MapFeature.Obstruction)
     //            {
-    //                Point north = guardPoint.North;
+    //                Point2D north = guardPoint.North;
     //                if (!IsCoordinateOnMap(north, map))
     //                {
     //                    guardPoint.SetFeature(map, MapFeature.Covered);
@@ -369,7 +172,7 @@ public class Day06Puzzle01 : Puzzle
     //            return infrontWest;
 
     //        case MapFeature.GuardLookingNorth:
-    //            Point infrontNorth = guardPoint.North;
+    //            Point2D infrontNorth = guardPoint.North;
     //            if (!IsCoordinateOnMap(infrontNorth, map))
     //            {
     //                guardPoint.SetFeature(map,MapFeature.Covered);
@@ -378,7 +181,7 @@ public class Day06Puzzle01 : Puzzle
     //            MapFeature infrontNorthFeature = infrontNorth.GetFeature(map);
     //            if (infrontNorthFeature == MapFeature.Obstruction)
     //            {
-    //                Point east = guardPoint.East;
+    //                Point2D east = guardPoint.East;
     //                if (!IsCoordinateOnMap(east, map))
     //                {
     //                    guardPoint.SetFeature(map, MapFeature.Covered);
@@ -399,7 +202,7 @@ public class Day06Puzzle01 : Puzzle
     //            return infrontNorth;
 
     //        case MapFeature.GuardLookingEast:
-    //            Point infrontEast = guardPoint.East;
+    //            Point2D infrontEast = guardPoint.East;
     //            if (!IsCoordinateOnMap(infrontEast, map))
     //            {
     //                guardPoint.SetFeature(map, MapFeature.Covered);
@@ -408,7 +211,7 @@ public class Day06Puzzle01 : Puzzle
     //            MapFeature infrontEastFeature = infrontEast.GetFeature(map);
     //            if (infrontEastFeature == MapFeature.Obstruction)
     //            {
-    //                Point south = guardPoint.South;
+    //                Point2D south = guardPoint.South;
     //                if (!IsCoordinateOnMap(south, map))
     //                {
     //                    guardPoint.SetFeature(map,MapFeature.Covered);
@@ -429,7 +232,7 @@ public class Day06Puzzle01 : Puzzle
     //            return infrontEast;
 
     //        case MapFeature.GuardLookingSouth:
-    //            Point infrontSouth = guardPoint.South;
+    //            Point2D infrontSouth = guardPoint.South;
     //            if (!IsCoordinateOnMap(infrontSouth, map))
     //            {
     //                guardPoint.SetFeature(map, MapFeature.Covered);
@@ -438,7 +241,7 @@ public class Day06Puzzle01 : Puzzle
     //            MapFeature infrontSouthFeature = infrontSouth.GetFeature(map);
     //            if (infrontSouthFeature == MapFeature.Obstruction)
     //            {
-    //                Point west = guardPoint.West;
+    //                Point2D west = guardPoint.West;
     //                if (!IsCoordinateOnMap(west, map))
     //                {
     //                    guardPoint.SetFeature(map,MapFeature.Covered);

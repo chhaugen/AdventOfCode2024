@@ -17,7 +17,7 @@ public class Day07Puzzle02 : Puzzle
         [
             new("+", (f, s) => f + s),
             new("*", (f, s) => f * s),
-            //new("||", (f, s) => long.Parse(f.ToString() + s.ToString())),
+            //new("||", (f, s) => long.ParseInput(f.ToString() + s.ToString())),
             new("||", (f, s) => f * (long)Math.Pow(10, (int)Math.Log10(s) + 1) + s),
         ];
 

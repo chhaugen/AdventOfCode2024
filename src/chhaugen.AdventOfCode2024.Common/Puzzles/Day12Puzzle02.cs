@@ -11,10 +11,10 @@ public class Day12Puzzle02 : Puzzle
 
     public override Task<string> SolveAsync(string input)
     {
-        Map<char> map = ParseInput(input);
+        Map2D<char> map = Map2D<char>.ParseInput(input, x => x);
 
         var flowers = map.GetUniqueValues();
-        List<List<Point<char>>> blobs = [];
+        List<List<Point2D<char>>> blobs = [];
         foreach (var flower in flowers)
         {
             var flowerPoints = map
@@ -27,12 +27,12 @@ public class Day12Puzzle02 : Puzzle
                 var startPoint = flowerPoints[0];
                 flowerPoints.RemoveAt(0);
 
-                List<Point<char>> blobPoints = GetItselfAndNeigboursRecursive(startPoint, flowerPoints).ToList();
+                List<Point2D<char>> blobPoints = GetItselfAndNeigboursRecursive(startPoint, flowerPoints).ToList();
                 blobs.Add(blobPoints);
             }
         }
 
-        List<(List<Point<char>> blob, List<List<Point<char>>> edgeGroups)> wow = [];
+        List<(List<Point2D<char>> blob, List<List<Point2D<char>>> edgeGroups)> wow = [];
 
         foreach (var blob in blobs)
         {
@@ -42,14 +42,14 @@ public class Day12Puzzle02 : Puzzle
                     .Where(p => p
                         .GetEdgeDirections()
                         .Contains(d))
-                    .GroupBy(x => d.GetAxis() == Axis.X ? x.Y : x.X)
+                    .GroupBy(x => d.ToAxis() == Axis2D.X ? x.Y : x.X)
                     .ToList())
                 .ToList();
-            List<List<Point<char>>> edgeGroupsOuter = [];
+            List<List<Point2D<char>>> edgeGroupsOuter = [];
             foreach (var directionGroup in what)
             {
                 var popList = directionGroup.SelectMany(x => x).ToList();
-                List<List<Point<char>>> edgeGroupsInner = [];
+                List<List<Point2D<char>>> edgeGroupsInner = [];
                 while (popList.Count > 0)
                 {
                     var startPoint = popList[0];
@@ -68,7 +68,7 @@ public class Day12Puzzle02 : Puzzle
         return Task.FromResult(result.ToString() ?? string.Empty);
     }
 
-    //public static IEnumerable<Point<T>> RecursivlyFindPointsOnSameSide<T>(Point<T> point, int axis, List<List<Point<char>>> edgeGroupsInner)
+    //public static IEnumerable<Point2D<T>> RecursivlyFindPointsOnSameSide<T>(Point2D<T> point, int axis, List<List<Point2D<char>>> edgeGroupsInner)
     //{
     //    yield return point;
     //    var value = point.Value;
@@ -81,7 +81,7 @@ public class Day12Puzzle02 : Puzzle
     //    foreach (var direction in possibleNeigbours)
     //    {
     //        var possibleNeigbour = point.
-    //        if (!possibleNeigbour.ExistsOnMap)
+    //        if (!possibleNeigbour.IsOnMap)
     //            return;
 
     //        var popListResult = popList.FirstOrDefault(x => x.Equals(possibleNeigbour));
