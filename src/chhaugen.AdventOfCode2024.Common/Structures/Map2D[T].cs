@@ -93,7 +93,7 @@ public class Map2D<T> : Map2D, ICloneable
         foreach (var direction in Enum.GetValues<CardinalDirection>())
         {
             var directionPoint = point.GetPointInDirection(direction);
-            if (!HasPoint(point) || !(this[directionPoint]?.Equals(pointValue) ?? false))
+            if (!HasPoint(directionPoint) || !(this[directionPoint]?.Equals(pointValue) ?? false))
                 yield return direction;
         }
     }

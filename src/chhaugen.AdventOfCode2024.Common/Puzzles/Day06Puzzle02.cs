@@ -85,7 +85,7 @@ public class Day06Puzzle02 : Puzzle
         PlayGuard(initialGuard, () => _progressOutput(mapCopy.PrintMap()));
         Thread.Sleep(1);
 
-        var coveredPoints = mapCopy.AsPointEnumerable().Where(x => map[x] == 'X');
+        var coveredPoints = mapCopy.AsPointEnumerable().Where(x => mapCopy[x] == 'X');
         return coveredPoints;
     }
 
@@ -93,8 +93,6 @@ public class Day06Puzzle02 : Puzzle
     {
         foreach (var coveredPoint in coveredPoints)
         {
-            if (map[coveredPoint] != 'X')
-                continue;
             Map2D<char> mapCopy = map.Clone();
             mapCopy[coveredPoint] = '#';
             yield return mapCopy;
