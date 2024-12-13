@@ -11,15 +11,15 @@ public class Day12Puzzle02 : Puzzle
 
     public override Task<string> SolveAsync(string input)
     {
-        Map2D<char> map = Map2D<char>.ParseInput(input, x => x);
+        Map2D<char> map = Map2D.ParseInput(input, x => x);
 
         var flowers = map.GetUniqueValues();
-        List<List<Point2D<char>>> blobs = [];
+        List<List<Point2D>> blobs = [];
         foreach (var flower in flowers)
         {
             var flowerPoints = map
                 .AsPointEnumerable()
-                .Where(x => x.Value == flower)
+                .Where(x => map[x] == flower)
                 .ToList();
 
             while (flowerPoints.Count > 0)
@@ -27,34 +27,34 @@ public class Day12Puzzle02 : Puzzle
                 var startPoint = flowerPoints[0];
                 flowerPoints.RemoveAt(0);
 
-                List<Point2D<char>> blobPoints = GetItselfAndNeigboursRecursive(startPoint, flowerPoints).ToList();
+                List<Point2D> blobPoints = GetItselfAndNeigboursRecursive(map, startPoint, flowerPoints).ToList();
                 blobs.Add(blobPoints);
             }
         }
 
-        List<(List<Point2D<char>> blob, List<List<Point2D<char>>> edgeGroups)> wow = [];
+        List<(List<Point2D> blob, List<List<Point2D>> edgeGroups)> wow = [];
 
         foreach (var blob in blobs)
         {
             var what = Enum
                 .GetValues<CardinalDirection>()
                 .Select(d => blob
-                    .Where(p => p
-                        .GetEdgeDirections()
+                    .Where(p => map
+                        .GetEdgeDirections(p)
                         .Contains(d))
                     .GroupBy(x => d.ToAxis() == Axis2D.X ? x.Y : x.X)
                     .ToList())
                 .ToList();
-            List<List<Point2D<char>>> edgeGroupsOuter = [];
+            List<List<Point2D>> edgeGroupsOuter = [];
             foreach (var directionGroup in what)
             {
                 var popList = directionGroup.SelectMany(x => x).ToList();
-                List<List<Point2D<char>>> edgeGroupsInner = [];
+                List<List<Point2D>> edgeGroupsInner = [];
                 while (popList.Count > 0)
                 {
                     var startPoint = popList[0];
                     popList.RemoveAt(0);
-                    var list = GetItselfAndNeigboursRecursive(startPoint, popList).ToList();
+                    var list = GetItselfAndNeigboursRecursive(map, startPoint, popList).ToList();
                     edgeGroupsInner.Add(list);
                 }
                 edgeGroupsOuter.AddRange(edgeGroupsInner);

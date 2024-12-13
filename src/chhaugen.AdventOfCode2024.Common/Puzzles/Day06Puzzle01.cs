@@ -1,7 +1,5 @@
 ﻿using chhaugen.AdventOfCode2024.Common.Extentions;
 using chhaugen.AdventOfCode2024.Common.Structures;
-using System.Diagnostics.CodeAnalysis;
-using System.Text;
 
 namespace chhaugen.AdventOfCode2024.Common.Puzzles;
 public class Day06Puzzle01 : Puzzle
@@ -60,52 +58,52 @@ public class Day06Puzzle01 : Puzzle
         };
 
     public static Guard FindGuard(Map2D<char> map)
-        => new(map
+        => new(map, map
             .AsPointEnumerable()
-            .First(x => x.Value is '<' or '^' or '>' or 'v'));
+            .First(x => map[x] is '<' or '^' or '>' or 'v'));
 
 
 
     public readonly struct Guard : IEquatable<Guard>
     {
+        private readonly Map2D<char> _map;
 
-        public Guard(Point2D<char> point)
+        public Guard(Map2D<char> map, Point2D point)
         {
+            _map = map;
             Point = point;
-            Direction = GuardCharToDirection(Point.Value);
         }
 
-        public Point2D<char> Point { get; }
+        public Point2D Point { get; }
 
-        public CardinalDirection Direction { get; }
+        public CardinalDirection Direction => GuardCharToDirection(_map[Point]);
 
         public Guard Turn90Degrees()
         {
-            var currentDirection = Direction;
             var newDirection = Direction.TurnClockwise();
-            Point.Value = DirectionToGuardChar(newDirection);
-            return new(Point);
+            _map[Point] = DirectionToGuardChar(newDirection);
+            return this;
         }
 
         public Guard MoveForward()
         {
-            Point2D<char> newPoint = Point.GetPointInDirection(Direction);
-            newPoint.Value = Point.Value;
-            Point.Value = 'X';
-            return new(newPoint);
+            Point2D newPoint = Point.GetPointInDirection(Direction);
+            _map[newPoint] = _map[Point];
+            _map[Point] = 'X';
+            return new(_map, newPoint);
         }
 
         public Guard? PlayOneStep()
         {
             var pointInFront = Point.GetPointInDirection(Direction);
             // Guard left the map
-            if (!pointInFront.IsOnMap)
+            if (!_map.HasPoint(pointInFront))
             {
-                Point.Value = 'X';
+                _map[Point] = 'X';
                 return null;
             }
 
-            if (pointInFront.Value == '#')
+            if (_map[pointInFront] == '#')
                 return Turn90Degrees();
 
             return MoveForward();

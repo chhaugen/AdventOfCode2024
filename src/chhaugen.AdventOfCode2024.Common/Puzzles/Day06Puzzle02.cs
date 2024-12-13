@@ -14,7 +14,7 @@ public class Day06Puzzle02 : Puzzle
         var map = Map2D.ParseInput(inputString);
 
         var initialGuard = FindGuard(map);
-        List<Point2D<char>> coveredPoints = GetPointsOfPlayedMap(map, initialGuard)
+        List<Point2D> coveredPoints = GetPointsOfPlayedMap(map, initialGuard)
             .Where(x => x != initialGuard.Point)
             .ToList();
 
@@ -78,21 +78,18 @@ public class Day06Puzzle02 : Puzzle
         return guardLooped;
     }
 
-    private IEnumerable<Point2D<char>> GetPointsOfPlayedMap(Map2D<char> map, Guard initialGuard)
+    private IEnumerable<Point2D> GetPointsOfPlayedMap(Map2D<char> map, Guard initialGuard)
     {
         Map2D<char> mapCopy = map.Clone();
-        int guardX = initialGuard.Point.X;
-        int guardY = initialGuard.Point.Y;
-        var newPoint = mapCopy.GetPoint(guardX, guardY);
-        initialGuard = new(newPoint);
+        initialGuard = new(mapCopy, initialGuard.Point);
         PlayGuard(initialGuard, () => _progressOutput(mapCopy.PrintMap()));
         Thread.Sleep(1);
 
-        var coveredPoints = mapCopy.AsPointEnumerable().Where(x => x.Value == 'X');
+        var coveredPoints = mapCopy.AsPointEnumerable().Where(x => map[x] == 'X');
         return coveredPoints;
     }
 
-    public static IEnumerable<Map2D<char>> NewObstructionInPathVariations(Map2D<char> map, IEnumerable<Point2D<char>> coveredPoints)
+    public static IEnumerable<Map2D<char>> NewObstructionInPathVariations(Map2D<char> map, IEnumerable<Point2D> coveredPoints)
     {
         foreach (var coveredPoint in coveredPoints)
         {

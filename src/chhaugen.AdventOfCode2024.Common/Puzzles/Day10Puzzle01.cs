@@ -26,7 +26,7 @@ public class Day10Puzzle01 : Puzzle
         var scores = startingNodes
             .Select(x => x
                 .GetLeafs()
-                .Where(y => y.Point.Value == 9)
+                .Where(y => map[y.Point] == 9)
                 .DistinctBy(x => x.Point)
                 .ToList())
             .ToList();
@@ -39,17 +39,17 @@ public class Day10Puzzle01 : Puzzle
     public static IEnumerable<TrialNode> GetPossibleStaringNodes(Map2D<ushort> map)
         => map
         .AsPointEnumerable()
-        .Where(x => x.Value == 0)
-        .Select(x => new TrialNode(x));
+        .Where(x => map[x] == 0)
+        .Select(x => new TrialNode(map, x));
 
 
-    public static IEnumerable<Point2D<ushort>> ScanForPosibleTrialContinuation(Point2D<ushort> point)
+    public static IEnumerable<Point2D> ScanForPosibleTrialContinuation(Point2D point, Map2D<ushort> map)
     {
-        var currentValue = point.Value;
+        var currentValue = map[point];
         foreach (var direction in Enum.GetValues<CardinalDirection>())
         {
             var possibleNeighbor = point.GetPointInDirection(direction);
-            if (possibleNeighbor.IsOnMap && possibleNeighbor.Value == currentValue +1)
+            if (map.HasPoint(possibleNeighbor) && map[possibleNeighbor] == currentValue +1)
                 yield return possibleNeighbor;
         }
     }
@@ -79,19 +79,21 @@ public class Day10Puzzle01 : Puzzle
 
     public class TrialNode
     {
-        public TrialNode(Point2D<ushort> mapPoint, TrialNode? parrent = null)
+        private readonly Map2D<ushort> _map;
+        public TrialNode(Map2D<ushort> map, Point2D mapPoint, TrialNode? parrent = null)
         {
+            _map = map;
             Point = mapPoint;
             Parrent = parrent;
         }
 
         public TrialNode? Parrent { get; }
 
-        public Point2D<ushort> Point { get; }
+        public Point2D Point { get; }
 
         public IEnumerable<TrialNode> Children
-            => ScanForPosibleTrialContinuation(Point)
-            .Select(x => new TrialNode(x, this));
+            => ScanForPosibleTrialContinuation(Point, _map)
+            .Select(x => new TrialNode(_map, x, this));
 
         public bool IsLeaf => !Children.Any();
 
@@ -139,7 +141,7 @@ public class Day10Puzzle01 : Puzzle
             }
         }
 
-        public static string PrintFlattendTrials(IEnumerable<IEnumerable<TrialNode>> trialNodes)
+        public static string PrintFlattendTrials(IEnumerable<IEnumerable<TrialNode>> trialNodes, Map2D<char> map)
         {
             StringBuilder sb = new();
             sb.Append('[');
@@ -148,7 +150,7 @@ public class Day10Puzzle01 : Puzzle
                 sb.Append('[');
                 foreach (var leaf in trialNode)
                 {
-                    sb.Append($"{leaf.Point.Value}: {leaf.Point}, ");
+                    sb.Append($"{map[leaf.Point]}: {leaf.Point}, ");
                 }
                 sb.Append(']');
             }

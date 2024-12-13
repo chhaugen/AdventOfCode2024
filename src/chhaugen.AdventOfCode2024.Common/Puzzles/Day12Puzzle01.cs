@@ -9,14 +9,14 @@ public class Day12Puzzle01 : Puzzle
 
     public override Task<string> SolveAsync(string input)
     {
-        Map2D<char> map = Map2D<char>.ParseInput(input, x => x);
+        Map2D<char> map = Map2D.ParseInput(input, x => x);
         var flowers = map.GetUniqueValues();
-        List<List<Point2D<char>>> blobs = []; 
+        List<List<Point2D>> blobs = []; 
         foreach (var flower in flowers)
         {
             var flowerPoints = map
                 .AsPointEnumerable()
-                .Where(x => x.Value == flower)
+                .Where(x => map[x] == flower)
                 .ToList();
 
             while (flowerPoints.Count > 0)
@@ -24,33 +24,34 @@ public class Day12Puzzle01 : Puzzle
                 var startPoint = flowerPoints[0];
                 flowerPoints.RemoveAt(0);
 
-                List<Point2D<char>> blobPoints = GetItselfAndNeigboursRecursive(startPoint, flowerPoints).ToList();
+                List<Point2D> blobPoints = GetItselfAndNeigboursRecursive(map, startPoint, flowerPoints).ToList();
                 blobs.Add(blobPoints);
             }
         }
 
         var blobNumbers = blobs
-            .Select(x => new { Edges = x.Sum(x => x.GetEdgeCount()), Area = x.Count })
+            .Select(x => new { Edges = x.Sum(x => map.GetEdgeCount(x)), Area = x.Count })
             .ToList();
         var sum = blobNumbers.Select(x => x.Edges * x.Area).Sum();
 
         return Task.FromResult(sum.ToString());
     }
 
-    public static IEnumerable<Point2D<T>> GetItselfAndNeigboursRecursive<T>(Point2D<T> point, List<Point2D<T>> popList)
+    public static IEnumerable<Point2D> GetItselfAndNeigboursRecursive<T>(Map2D<T> map, Point2D point, List<Point2D> popList)
     {
         yield return point;
-        var value = point.Value;
+        var value = map[point];
         foreach(var direction in Enum.GetValues<CardinalDirection>())
         {
             var possibleNeigbour = point.GetPointInDirection(direction);
-            if (!possibleNeigbour.IsOnMap)
+            if (!map.HasPoint(possibleNeigbour))
                 continue;
-            var popListResult = popList.FirstOrDefault(x => x.Equals(possibleNeigbour));
-            if (popListResult != null)
+            Point2D defaultPoint = new(-1, -1);
+            var popListResult = popList.FirstOrDefault(x => x.Equals(possibleNeigbour), defaultPoint);
+            if (popListResult != defaultPoint)
             {
                 popList.Remove(popListResult);
-                foreach (var subNeighboar in GetItselfAndNeigboursRecursive(possibleNeigbour, popList))
+                foreach (var subNeighboar in GetItselfAndNeigboursRecursive(map, possibleNeigbour, popList))
                     yield return subNeighboar;
             }
         }
@@ -60,14 +61,14 @@ public class Day12Puzzle01 : Puzzle
     {
         map.ForEachPoint(p =>
         {
-            if (p.Value == default)
+            if (map[p] == default)
             {
                 foreach (var direction in Enum.GetValues<CardinalDirection>())
                 {
                     var directionPoint = p.GetPointInDirection(direction);
-                    if (directionPoint.IsOnMap)
+                    if (map.HasPoint(directionPoint))
                     {
-                        if (directionPoint.Value != default)
+                        if (map[directionPoint] != default)
                         {
                             var directionInt = (int)direction;
                         }

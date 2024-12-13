@@ -61,23 +61,23 @@ public class Day12Puzzle02Tests
         // Arrange
         string input = string.Join('\n', Enumerable.Range(0, 4).Select(x => "QQQQ"));
         Map2D<char> map = Map2D.ParseInput(input);
-        List<Point2D<char>> expected = [
-            map.GetPoint(0,0),
-            map.GetPoint(0,1),
-            map.GetPoint(0,2),
-            map.GetPoint(0,3),
-            map.GetPoint(1,3),
-            map.GetPoint(2,3),
-            map.GetPoint(3,3),
-            map.GetPoint(3,2),
-            map.GetPoint(3,1),
-            map.GetPoint(3,0),
-            map.GetPoint(2,0),
-            map.GetPoint(1,0),
-            map.GetPoint(1,1),
-            map.GetPoint(1,2),
-            map.GetPoint(2,2),
-            map.GetPoint(2,1),
+        List<Point2D> expected = [
+            new(0,0),
+            new(0,1),
+            new(0,2),
+            new(0,3),
+            new(1,3),
+            new(2,3),
+            new(3,3),
+            new(3,2),
+            new(3,1),
+            new(3,0),
+            new(2,0),
+            new(1,0),
+            new(1,1),
+            new(1,2),
+            new(2,2),
+            new(2,1),
             ];
 
         // Act

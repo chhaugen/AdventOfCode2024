@@ -18,7 +18,7 @@ public class Day10Puzzle02 : Puzzle
         var scores = startingNodes
             .Select(x => x
                 .GetLeafs()
-                .Where(y => y.Point.Value == 9)
+                .Where(y => map[y.Point] == 9)
                 .ToList())
             .ToList();
 
