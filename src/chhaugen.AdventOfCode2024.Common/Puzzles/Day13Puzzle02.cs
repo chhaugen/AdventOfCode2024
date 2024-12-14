@@ -17,61 +17,29 @@ public class Day13Puzzle02 : Puzzle
         {
             var arcadeMachine = arcadeMachines[i];
 
-            long? leastAmoutOfTokens = null;
-            GameState boostedStartState = CreateBoostedGameState(arcadeMachine.Buttons);
-            HashSet<GameState> gameStates = [boostedStartState];
-            while (!leastAmoutOfTokens.HasValue)
-            {
-                HashSet<GameState> newGameStates = [];
-                foreach (var gameState in gameStates)
-                {
-                    if (arcadeMachine.Prize == gameState.ClawPosition)
-                    {
-                        leastAmoutOfTokens = gameState.TokensUsed;
-                        break;
-                    }
-
-                    foreach (Button button in arcadeMachine.Buttons)
-                    {
-                        if (gameState.MovesPlayed.TryGetValue(button.Symbol, out long buttonMoveCount))
-                        {
-                            if (!boostedStartState.MovesPlayed.TryGetValue(button.Symbol, out long boostedStartStateCount))
-                                boostedStartStateCount = 0;
-
-                            if (buttonMoveCount - boostedStartStateCount > 200)
-                                continue;
-                        }
-
-                        var movesPlayed = gameState.MovesPlayed.ToDictionary(x => x.Key, x => x.Value);
-                        movesPlayed.TryAdd(button.Symbol, 0);
-                        movesPlayed[button.Symbol]++;
-                        var newGripper = gameState.ClawPosition.Add(button.Vector);
-                        var newTokenCount = gameState.TokensUsed + button.TokenCost;
-                        var newGameState = new GameState(movesPlayed, newGripper, newTokenCount);
-                        newGameStates.Add(newGameState);
-                    }
-                }
-                if (newGameStates.Count == 0)
-                    leastAmoutOfTokens = -1;
-                gameStates = newGameStates;
-            }
-            leastAmoutOfTokensArray[i] = leastAmoutOfTokens.Value;
+            GameState boostedStartState = CreateBoostedGameState(arcadeMachine.Buttons, arcadeMachine.Prize);
+            leastAmoutOfTokensArray[i] = boostedStartState.ClawPosition == arcadeMachine.Prize
+                ? MovesPlayedToTokensSpent(boostedStartState.MovesPlayed, arcadeMachine.Buttons)
+                : -1;
         }
         long totalSum = leastAmoutOfTokensArray.Where(x => x != -1).Sum();
 
         return Task.FromResult(totalSum.ToString());
     }
 
-    public static GameState CreateBoostedGameState(Button[] arcadeMachineButtons)
+    public static long MovesPlayedToTokensSpent(Dictionary<char, long> movesPlayed, Button[] buttons)
+        => movesPlayed
+        .Select(x => new { Button = buttons.First(y => y.Symbol == x.Key), Pressed = x.Value })
+        .Select(x => x.Button.TokenCost * x.Pressed)
+        .Sum();
+
+    public static GameState CreateBoostedGameState(Button[] arcadeMachineButtons, Point2D pize)
     {
-        //var cheapestButton = arcadeMachineButtons.Max(x => x.Vector.ManhattanLength / (decimal)x.TokenCost);
-        long goal = 10000000000000;
-        Point2D goalPoint = new(goal, goal);
-        Line2D straightLine = new(a: -1, b: 1, c: 0);
+        Line2D straightLine = new(pize);
         GameState gameState = new();
-        while (gameState.ClawPosition.X < goal && gameState.ClawPosition.Y < goal)
+        while (gameState.ClawPosition.X < pize.X && gameState.ClawPosition.Y < pize.Y)
         {
-            Vector2D towardsGoal = new(gameState.ClawPosition, goalPoint);
+            Vector2D towardsGoal = new(gameState.ClawPosition, pize);
             double LengthToCover = towardsGoal.Length * 0.1;
             GameState[] possibleGameStates = new GameState[arcadeMachineButtons.Length];
             for (int i = 0;  i < possibleGameStates.Length; i++)

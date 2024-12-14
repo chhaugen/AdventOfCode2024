@@ -17,30 +17,30 @@ public class Day13Puzzle02Tests
     }
 
 
-    [Fact]
-    public async Task SolveAsync_UsingExampleInput()
-    {
-        // Arrange
-        Day13Puzzle02 puzzle = new(_output.WriteLine);
-        string input = await _inputs.GetInputAsync(day: 13, "example.txt");
-
-        string correctOutput = 480.ToString();
-        // Act
-        string output = await puzzle.SolveAsync(input);
-        // Assert
-        //Assert.Equal(correctOutput, output);
-    }
-
     //[Fact]
-    //public async Task SolveAsync_UsingRealInput()
+    //public async Task SolveAsync_UsingExampleInput()
     //{
     //    // Arrange
-    //    Day13Puzzle01 puzzle = new();
-    //    string input = await _inputs.GetInputAsync(day: 13, "input.txt");
-    //    string correctOutput = 2166959.ToString();
+    //    Day13Puzzle02 puzzle = new(_output.WriteLine);
+    //    string input = await _inputs.GetInputAsync(day: 13, "example.txt");
+
+    //    string correctOutput = 480.ToString();
     //    // Act
     //    string output = await puzzle.SolveAsync(input);
     //    // Assert
-    //    Assert.Equal(correctOutput, output);
+    //    //Assert.Equal(correctOutput, output);
     //}
+
+    [Fact]
+    public async Task SolveAsync_UsingRealInput()
+    {
+        // Arrange
+        Day13Puzzle02 puzzle = new();
+        string input = await _inputs.GetInputAsync(day: 13, "input.txt");
+        string correctOutput = 83551068361379.ToString();
+        // Act
+        string output = await puzzle.SolveAsync(input);
+        // Assert
+        Assert.Equal(correctOutput, output);
+    }
 }
