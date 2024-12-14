@@ -123,6 +123,9 @@ public class Map2D<T> : Map2D, ICloneable
         }
     }
 
+    public Point2D WrapPointOntoMap(Point2D point)
+        => new(point.X % _xLength, point.Y % _yLength);
+
 
     public IEnumerable<Point2D> AsPointEnumerable()
     {
@@ -183,9 +186,9 @@ public class Map2D<T> : Map2D, ICloneable
     public string PrintMap()
     {
         StringBuilder sb = new();
-        for (long x = 0; x < _xLength; x++)
+        for (long y = 0; y < _yLength; y++)
         {
-            for (long y = 0; y < _yLength; y++)
+            for (long x = 0; x < _xLength; x++)
             {
                 sb.Append(_map[x, y]);
             }
