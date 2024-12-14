@@ -28,4 +28,17 @@ public readonly struct Vector2D
 
     public Vector2D Scale(long scale)
         => new(X * scale, Y * scale);
+
+    public Vector2D MultiplyWith(Matrix2x2<long> matrix)
+    {
+        long x = matrix.A * X + matrix.B * Y;
+        long y = matrix.C * X + matrix.D * Y;
+        return new(x, y);
+    }
+    public Vector2D MultiplyWith(Matrix2x2<double> matrix)
+    {
+        long x = Convert.ToInt64(matrix.A * X + matrix.B * Y) +1;
+        long y = Convert.ToInt64(matrix.C * X + matrix.D * Y) +1;
+        return new(x, y);
+    }
 }

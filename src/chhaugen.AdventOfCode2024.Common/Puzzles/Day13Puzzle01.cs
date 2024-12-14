@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Reflection.PortableExecutable;
 using chhaugen.AdventOfCode2024.Common.Extentions;
 using chhaugen.AdventOfCode2024.Common.Structures;
 
@@ -11,54 +12,75 @@ public class Day13Puzzle01 : Puzzle
 
     public override Task<string> SolveAsync(string input)
     {
-
         ArcadeMachine[] arcadeMachines = ParseInput(input);
         long[] leastAmoutOfTokensArray = new long[arcadeMachines.Length];
-
         for (int i = 0; i < arcadeMachines.Length; i++)
         {
-            var arcadeMachine = arcadeMachines[i];
-
-            long? leastAmoutOfTokens = null;
-            HashSet<GameState> gameStates = [new()];
-            while (!leastAmoutOfTokens.HasValue)
-            {
-                HashSet<GameState> newGameStates = [];
-                foreach(var gameState in gameStates)
-                {
-                    if (arcadeMachine.Prize == gameState.ClawPosition)
-                    {
-                        leastAmoutOfTokens = gameState.TokensUsed;
-                        break;
-                    }
-
-                    foreach(Button button in arcadeMachine.Buttons)
-                    {
-                        if (gameState.MovesPlayed.TryGetValue(button.Symbol, out long buttonMoveCount))
-                        {
-                            if (buttonMoveCount > 100)
-                                continue;
-                        }
-
-                        var movesPlayed = gameState.MovesPlayed.ToDictionary(x => x.Key, x => x.Value);
-                        movesPlayed.TryAdd(button.Symbol, 0);
-                        movesPlayed[button.Symbol]++;
-                        var newGripper = gameState.ClawPosition.Add(button.Vector);
-                        var newTokenCount = gameState.TokensUsed + button.TokenCost;
-                        var newGameState = new GameState(movesPlayed, newGripper, newTokenCount);
-                        newGameStates.Add(newGameState);
-                    }
-                }
-                if (newGameStates.Count == 0)
-                    leastAmoutOfTokens = -1;
-                gameStates = newGameStates;
-            }
-            leastAmoutOfTokensArray[i] = leastAmoutOfTokens.Value;
+            var machine = arcadeMachines[i];
+            var firstButton = machine.Buttons[0];
+            var secondButton = machine.Buttons[1];
+            var matrix = ButtonsToMatrix(firstButton, secondButton);
+            var invertedMatrix = matrix.Cast(x => (double)x).GetInverse();
+            var resultVector = machine.Prize.AsVector().MultiplyWith(invertedMatrix);
         }
-        long totalSum = leastAmoutOfTokensArray.Where(x => x != -1).Sum();
 
-        return Task.FromResult(totalSum.ToString());
+        return Task.FromResult("".ToString());
     }
+
+    public static Matrix2x2<long> ButtonsToMatrix(Button first, Button second)
+        => new(first.Vector.X, first.Vector.Y, second.Vector.X, second.Vector.Y);
+
+
+    //public override Task<string> SolveAsync(string input)
+    //{
+
+    //    ArcadeMachine[] arcadeMachines = ParseInput(input);
+    //    long[] leastAmoutOfTokensArray = new long[arcadeMachines.Length];
+
+    //    for (int i = 0; i < arcadeMachines.Length; i++)
+    //    {
+    //        var arcadeMachine = arcadeMachines[i];
+
+    //        long? leastAmoutOfTokens = null;
+    //        HashSet<GameState> gameStates = [new()];
+    //        while (!leastAmoutOfTokens.HasValue)
+    //        {
+    //            HashSet<GameState> newGameStates = [];
+    //            foreach(var gameState in gameStates)
+    //            {
+    //                if (arcadeMachine.Prize == gameState.ClawPosition)
+    //                {
+    //                    leastAmoutOfTokens = gameState.TokensUsed;
+    //                    break;
+    //                }
+
+    //                foreach(Button button in arcadeMachine.Buttons)
+    //                {
+    //                    if (gameState.MovesPlayed.TryGetValue(button.Symbol, out long buttonMoveCount))
+    //                    {
+    //                        if (buttonMoveCount > 100)
+    //                            continue;
+    //                    }
+
+    //                    var movesPlayed = gameState.MovesPlayed.ToDictionary(x => x.Key, x => x.Value);
+    //                    movesPlayed.TryAdd(button.Symbol, 0);
+    //                    movesPlayed[button.Symbol]++;
+    //                    var newGripper = gameState.ClawPosition.Add(button.Vector);
+    //                    var newTokenCount = gameState.TokensUsed + button.TokenCost;
+    //                    var newGameState = new GameState(movesPlayed, newGripper, newTokenCount);
+    //                    newGameStates.Add(newGameState);
+    //                }
+    //            }
+    //            if (newGameStates.Count == 0)
+    //                leastAmoutOfTokens = -1;
+    //            gameStates = newGameStates;
+    //        }
+    //        leastAmoutOfTokensArray[i] = leastAmoutOfTokens.Value;
+    //    }
+    //    long totalSum = leastAmoutOfTokensArray.Where(x => x != -1).Sum();
+
+    //    return Task.FromResult(totalSum.ToString());
+    //}
 
     public static ArcadeMachine[] ParseInput(string input, bool add10To13ToPrize = false)
     {
@@ -79,6 +101,7 @@ public class Day13Puzzle01 : Puzzle
             'B' => 1,
             _ => throw new NotImplementedException(),
         };
+
 
     public readonly struct ArcadeMachine
     {
