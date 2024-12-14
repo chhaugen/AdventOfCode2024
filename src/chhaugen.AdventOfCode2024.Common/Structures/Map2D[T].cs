@@ -6,17 +6,17 @@ namespace chhaugen.AdventOfCode2024.Common.Structures;
 public class Map2D<T> : Map2D, ICloneable
 {
     private readonly T[,] _map;
-    private readonly int _xLength;
-    private readonly int _yLength;
+    private readonly long _xLength;
+    private readonly long _yLength;
 
     public Map2D(T[,] map)
     {
-        _xLength = map.GetLength(0);
-        _yLength = map.GetLength(1);
+        _xLength = map.GetLongLength(0);
+        _yLength = map.GetLongLength(1);
         _map = map;
     }
 
-    public T this[int x, int y]
+    public T this[long x, long y]
     {
         get => _map[x, y];
         set => _map[x, y] = value;
@@ -31,9 +31,9 @@ public class Map2D<T> : Map2D, ICloneable
     public HashSet<T> GetUniqueValues()
     {
         HashSet<T> plantTypes = [];
-        for (int x = 0; x < _xLength; x++)
+        for (long x = 0; x < _xLength; x++)
         {
-            for (int y = 0; y < _yLength; y++)
+            for (long y = 0; y < _yLength; y++)
             {
                 plantTypes.Add(_map[x, y]);
             }
@@ -45,9 +45,9 @@ public class Map2D<T> : Map2D, ICloneable
     {
         T[,] newMap = new T[_xLength, _yLength];
 
-        for (int x = 0; x < _xLength; x++)
+        for (long x = 0; x < _xLength; x++)
         {
-            for (int y = 0; y < _yLength; y++)
+            for (long y = 0; y < _yLength; y++)
             {
                 T mapValue = _map[x, y];
                 if (mapValue?.Equals(type) ?? false)
@@ -61,9 +61,9 @@ public class Map2D<T> : Map2D, ICloneable
     {
         T[,] newMap = new T[_xLength + 2, _yLength + 2];
 
-        for (int x = 0; x < _xLength; x++)
+        for (long x = 0; x < _xLength; x++)
         {
-            for (int y = 0; y < _yLength; y++)
+            for (long y = 0; y < _yLength; y++)
             {
                 newMap[x + 1, y + 1] = _map[x, y];
             }
@@ -98,12 +98,12 @@ public class Map2D<T> : Map2D, ICloneable
         }
     }
 
-    public int CountOf(T value)
+    public long CountOf(T value)
     {
-        int count = 0;
-        for (int x = 0; x < _xLength; x++)
+        long count = 0;
+        for (long x = 0; x < _xLength; x++)
         {
-            for (int y = 0; y < _yLength; y++)
+            for (long y = 0; y < _yLength; y++)
             {
                 if (value?.Equals(_map[x, y]) ?? value is null && _map[x, y] is null)
                     count++;
@@ -114,9 +114,9 @@ public class Map2D<T> : Map2D, ICloneable
 
     public void ForEachPoint(Action<Point2D> action)
     {
-        for (int x = 0; x < _xLength; x++)
+        for (long x = 0; x < _xLength; x++)
         {
-            for (int y = 0; y < _yLength; y++)
+            for (long y = 0; y < _yLength; y++)
             {
                 action(new(x, y));
             }
@@ -126,9 +126,9 @@ public class Map2D<T> : Map2D, ICloneable
 
     public IEnumerable<Point2D> AsPointEnumerable()
     {
-        for (int x = 0; x < _xLength; x++)
+        for (long x = 0; x < _xLength; x++)
         {
-            for (int y = 0; y < _yLength; y++)
+            for (long y = 0; y < _yLength; y++)
             {
                 yield return new(x, y);
             }
@@ -137,9 +137,9 @@ public class Map2D<T> : Map2D, ICloneable
 
     public IEnumerable<T> AsEnumerable()
     {
-        for (int x = 0; x < _xLength; x++)
+        for (long x = 0; x < _xLength; x++)
         {
-            for (int y = 0; y < _yLength; y++)
+            for (long y = 0; y < _yLength; y++)
             {
                 yield return _map[x, y];
             }
@@ -148,13 +148,13 @@ public class Map2D<T> : Map2D, ICloneable
 
     public IEnumerable<Point2D> GetSpiralInwardsPoints()
     {
-        int xMin = 0;
-        int yMin = 0;
-        int xMax = _xLength - 1;
-        int yMax = _yLength - 1;
+        long xMin = 0;
+        long yMin = 0;
+        long xMax = _xLength - 1;
+        long yMax = _yLength - 1;
         Point2D? currentPoint = null;
         CardinalDirection direction = CardinalDirection.South;
-        for (int i = 0; i < _xLength * _yLength; i++)
+        for (long i = 0; i < _xLength * _yLength; i++)
         {
             if (currentPoint is null)
             {
@@ -183,9 +183,9 @@ public class Map2D<T> : Map2D, ICloneable
     public string PrintMap()
     {
         StringBuilder sb = new();
-        for (int x = 0; x < _xLength; x++)
+        for (long x = 0; x < _xLength; x++)
         {
-            for (int y = 0; y < _yLength; y++)
+            for (long y = 0; y < _yLength; y++)
             {
                 sb.Append(_map[x, y]);
             }
@@ -197,9 +197,9 @@ public class Map2D<T> : Map2D, ICloneable
     public string PrintMap(Func<T, string> itemToStringConverter)
     {
         StringBuilder sb = new();
-        for (int x = 0; x < _xLength; x++)
+        for (long x = 0; x < _xLength; x++)
         {
-            for (int y = 0; y < _yLength; y++)
+            for (long y = 0; y < _yLength; y++)
             {
                 sb.Append(itemToStringConverter(_map[x,y]));
             }

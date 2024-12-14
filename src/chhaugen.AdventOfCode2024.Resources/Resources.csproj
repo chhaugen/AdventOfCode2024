@@ -16,4 +16,8 @@
 	  <EmbeddedResource Include="PuzzleInputs\**\*.*" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="PuzzleInputs\Day13\" />
+  </ItemGroup>
+
 </Project>

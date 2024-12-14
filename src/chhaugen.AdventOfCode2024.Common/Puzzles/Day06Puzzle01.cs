@@ -16,7 +16,7 @@ public class Day06Puzzle01 : Puzzle
         var guard = FindGuard(map);
         PlayGuard(guard, () => { });
 
-        int countCovered = map.CountOf('X');
+        long countCovered = map.CountOf('X');
 
         _progressOutput(map.PrintMap());
 

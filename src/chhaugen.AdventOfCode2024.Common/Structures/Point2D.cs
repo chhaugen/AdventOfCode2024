@@ -1,12 +1,15 @@
 ﻿namespace chhaugen.AdventOfCode2024.Common.Structures;
 public readonly struct Point2D : IEquatable<Point2D>
 {
-    public Point2D(int x, int y)
+    public Point2D(long x, long y)
     {
         (X, Y) = (x, y);
     }
-    public int X { get; }
-    public int Y { get; }
+    public long X { get; }
+    public long Y { get; }
+
+    public void Deconstruct(out long x, out long y)
+        => (x,y) = (X,Y);
 
     public Point2D West
         => new(X - 1, Y);
@@ -31,6 +34,12 @@ public readonly struct Point2D : IEquatable<Point2D>
 
     public Point2D SouthWest
         => new(X - 1, Y + 1);
+
+    public Point2D Add(Vector2D vector)
+        => new(X + vector.X, Y + vector.Y);
+
+    public Vector2D AsVector()
+        => new(this);
 
     public Point2D GetPointInDirection(CardinalDirection direction)
         => direction switch
@@ -65,9 +74,6 @@ public readonly struct Point2D : IEquatable<Point2D>
             PrincipalWind.NorthWest => NorthWest,
             _ => throw new NotImplementedException(),
         };
-
-
-    
 
     public bool Equals(Point2D other)
         => other.X == X && other.Y == Y;
