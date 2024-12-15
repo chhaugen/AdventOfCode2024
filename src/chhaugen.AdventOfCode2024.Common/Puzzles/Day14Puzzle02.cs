@@ -14,7 +14,7 @@ public class Day14Puzzle02 : Puzzle
     public Task<string> SolveAsync(string input, long xMax, long yMax)
     {
         Robot[] robots = ParseInput(input);
-
+        int pictureLength = 0;
         for (int i = 0; i < 7672; i++)
         {
             for (int j = 0; j < robots.Length; j++)
@@ -22,15 +22,16 @@ public class Day14Puzzle02 : Puzzle
                 robots[j] = robots[j].ElapseOneSecond(xMax, yMax);
             }
             var entropy = RobotsInLine(robots).Max(x => x.Value);
-            if (entropy > 30)
+            if (entropy > 30 && i == 7671)
             {
+                pictureLength = i + 1;
                 _progressOutput((i+1).ToString());
                 _progressOutput(entropy.ToString());
                 _progressOutput(PrintRobots(robots, xMax, yMax));
             }
         }
 
-        return Task.FromResult(string.Empty);
+        return Task.FromResult(pictureLength.ToString());
     }
 
     public static int DiagonalScores(Robot[] robots)
