@@ -18,26 +18,9 @@ public class Day15Puzzle02 : Puzzle
             .AsPointEnumerable()
             .First(p => map[p] == '@');
 
-        CardinalDirection previousMove = moves[0];
-        Map2D<char> previousMapState = map.Clone();
-        Point2D previousRobot = robot;
         foreach (var move in moves)
         {
-            previousMapState = map.Clone();
-            previousMove = move;
-            previousRobot = robot;
             robot = DoMove(robot, map, move);
-            bool boxBroken = map.AsPointEnumerable().Any(p => map[p] == '[' && map[p.East] != ']');
-            if (boxBroken)
-            {
-                _progressOutput(Enum.GetName(previousMove) ?? string.Empty);
-                _progressOutput(previousRobot.ToString());
-                _progressOutput(previousMapState.PrintMap());
-                _progressOutput(Enum.GetName(move) ?? string.Empty);
-                _progressOutput(robot.ToString());
-                _progressOutput(map.PrintMap());
-                
-            }
         }
         _progressOutput(map.PrintMap());
 
@@ -57,16 +40,14 @@ public class Day15Puzzle02 : Puzzle
     {
         List<Shuffle> shuffles = [];
         Point2D inFrontOfRobot = robot.GetPointInDirection(move);
-        if (robot.X == 91 && robot.Y == 30 && move == CardinalDirection.South)
-        {
-            inFrontOfRobot = inFrontOfRobot;
-        }
         if (!ScanShufflesRecursivly(inFrontOfRobot, move, map, shuffles))
             return robot;
 
         shuffles.Add(new(robot, m => (m[inFrontOfRobot], m[robot]) = (m[robot], m[inFrontOfRobot])));
 
-        var distinctShuffles = shuffles.DistinctBy(x => x.Target).ToList();
+        var distinctShuffles = shuffles
+            .DistinctBy(x => x.Target)
+            .ToList();
 
         foreach (var shuffle in distinctShuffles)
         {
@@ -124,20 +105,16 @@ public class Day15Puzzle02 : Puzzle
 
     private static bool ScanWideBox(CardinalDirection move, Map2D<char> map, List<Shuffle> shuffles, Point2D leftBox, Point2D rightBox, Point2D leftBoxInFront, Point2D rightBoxInfront)
     {
-        bool shuffleOk = false;
         if (map[leftBoxInFront] == '[' && map[rightBoxInfront] == ']')
         {
-            //if (map[leftBoxInFront.GetPointInDirection(move)] == '#' || map[rightBoxInfront.GetPointInDirection(move)] == '#')
-            //    shuffleOk = false;
-            //if (map[leftBoxInFront.GetPointInDirection(move)] == '.' && map[rightBoxInfront.GetPointInDirection(move)] == '.')
-            //    shuffleOk = true;
-            shuffleOk = ScanShufflesRecursivly(leftBoxInFront, move, map, shuffles);
+            if (!ScanShufflesRecursivly(leftBoxInFront, move, map, shuffles))
+                return false;
         }
         else
-            shuffleOk = ScanShufflesRecursivly(leftBoxInFront, move, map, shuffles) && ScanShufflesRecursivly(rightBoxInfront, move, map, shuffles);
-
-        if (!shuffleOk)
-            return false;
+        {
+            if (!ScanShufflesRecursivly(leftBoxInFront, move, map, shuffles) || !ScanShufflesRecursivly(rightBoxInfront, move, map, shuffles))
+                return false;
+        }
 
         shuffles.Add(new(leftBox, m => (m[leftBox], m[leftBoxInFront]) = (m[leftBoxInFront], m[leftBox])));
         shuffles.Add(new(rightBox, m => (m[rightBox], m[rightBoxInfront]) = (m[rightBoxInfront], m[rightBox])));
