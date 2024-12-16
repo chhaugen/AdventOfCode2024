@@ -1,4 +1,5 @@
-﻿using chhaugen.AdventOfCode2024.Common.Structures;
+﻿using chhaugen.AdventOfCode2024.Common.Extentions;
+using chhaugen.AdventOfCode2024.Common.Structures;
 
 namespace chhaugen.AdventOfCode2024.Common.Puzzles;
 public class Day15Puzzle02 : Puzzle
@@ -10,22 +11,41 @@ public class Day15Puzzle02 : Puzzle
     public override Task<string> SolveAsync(string input)
     {
 
-        (Map2D<IMapObject> map, List<IMove> moves) = ParseInputs(input);
-        _progressOutput(map.PrintMap(x => x.ToString()));
+        (Map2D<char> map, List<CardinalDirection> moves) = ParseInputs(input);
+        _progressOutput(map.PrintMap());
 
-        Point2D robotPoint = map.AsPointEnumerable().First(x => map[x] is Robot);
+        Point2D robot = map
+            .AsPointEnumerable()
+            .First(p => map[p] == '@');
 
-        foreach (IMove move in moves)
+        CardinalDirection previousMove = moves[0];
+        Map2D<char> previousMapState = map.Clone();
+        Point2D previousRobot = robot;
+        foreach (var move in moves)
         {
-            robotPoint = DoMove(robotPoint, move, map);
-            //_progressOutput(map.PrintMap(x => x.ToString()));
+            previousMapState = map.Clone();
+            previousMove = move;
+            previousRobot = robot;
+            robot = DoMove(robot, map, move);
+            bool boxBroken = map.AsPointEnumerable().Any(p => map[p] == '[' && map[p.East] != ']');
+            if (boxBroken)
+            {
+                _progressOutput(Enum.GetName(previousMove) ?? string.Empty);
+                _progressOutput(previousRobot.ToString());
+                _progressOutput(previousMapState.PrintMap());
+                _progressOutput(Enum.GetName(move) ?? string.Empty);
+                _progressOutput(robot.ToString());
+                _progressOutput(map.PrintMap());
+                
+            }
         }
-        _progressOutput(map.PrintMap(x => x.ToString()));
+        _progressOutput(map.PrintMap());
+
+
         var gpsList = map
             .AsPointEnumerable()
-            .Where(x => map[x] is LeftBox)
+            .Where(x => map[x] is '[')
             .Select(x => (x.Y * 100) + x.X)
-            //.Select(x => (x.Y <= (map.Height / 2) ? (x.Y * 100) : ((map.Height -1 - x.Y) * 100)) + (x.X <= (map.Width / 2) ? x.X : (map.Height -1 - x.X)))
             .ToList();
 
         var sum = gpsList.Sum();
@@ -33,85 +53,96 @@ public class Day15Puzzle02 : Puzzle
         return Task.FromResult(sum.ToString());
     }
 
-    public static Point2D DoMove(Point2D robotPoint, IMove move, Map2D<IMapObject> map)
+    public static Point2D DoMove(Point2D robot, Map2D<char> map, CardinalDirection move)
     {
-        List<Action<Map2D<IMapObject>>> shuffleMoves = [];
-        Point2D pointInfront = robotPoint.GetPointInDirection(move.Direction);
-        if (!ScanMove(pointInfront, move, map, shuffleMoves))
-            return robotPoint;
-        shuffleMoves.Add(x => (x[pointInfront], x[robotPoint]) = (x[robotPoint], x[pointInfront]));
-
-        foreach (var shuffleMove in shuffleMoves)
+        List<Shuffle> shuffles = [];
+        Point2D inFrontOfRobot = robot.GetPointInDirection(move);
+        if (robot.X == 91 && robot.Y == 30 && move == CardinalDirection.South)
         {
-            shuffleMove(map);
+            inFrontOfRobot = inFrontOfRobot;
         }
-        return pointInfront;
+        if (!ScanShufflesRecursivly(inFrontOfRobot, move, map, shuffles))
+            return robot;
+
+        shuffles.Add(new(robot, m => (m[inFrontOfRobot], m[robot]) = (m[robot], m[inFrontOfRobot])));
+
+        var distinctShuffles = shuffles.DistinctBy(x => x.Target).ToList();
+
+        foreach (var shuffle in distinctShuffles)
+        {
+            shuffle.Action(map);
+        }
+        return inFrontOfRobot; ;
     }
 
-    public static bool ScanMove(Point2D objectPoint, IMove move, Map2D<IMapObject> map, List<Action<Map2D<IMapObject>>> shuffleMoves)
-    { 
-        if (map[objectPoint] is Floor)
-            return true;
-
-        if (map[objectPoint] is Wall)
+    public static bool ScanShufflesRecursivly(Point2D pointToScan, CardinalDirection move, Map2D<char> map, List<Shuffle> shuffles)
+    {
+        if (map[pointToScan] == '#')
             return false;
 
-        if (map[objectPoint] is RightBox)
+        if (map[pointToScan] == '.')
+            return true;
+
+        if (map[pointToScan] == '[')
         {
-            return ScanMoveBox(objectPoint.West, objectPoint, move, map, shuffleMoves);
+            if (move == CardinalDirection.East)
+            {
+                Point2D pointInFront = pointToScan.East.East;
+                if (!ScanShufflesRecursivly(pointInFront, move, map, shuffles))
+                    return false;
+
+                shuffles.Add(new(pointToScan, m => (m[pointToScan], m[pointToScan.East], m[pointInFront]) = (m[pointInFront], m[pointToScan], m[pointToScan.East])));
+                return true;
+            }
+            Point2D leftBox = pointToScan;
+            Point2D rightBox = pointToScan.East;
+            Point2D leftBoxInFront = leftBox.GetPointInDirection(move);
+            Point2D rightBoxInfront = leftBoxInFront.East;
+            return ScanWideBox(move, map, shuffles, leftBox, rightBox, leftBoxInFront, rightBoxInfront);
         }
 
-        if (map[objectPoint] is LeftBox)
+        if (map[pointToScan] == ']')
         {
-            return ScanMoveBox(objectPoint, objectPoint.East, move, map, shuffleMoves);
+            if (move == CardinalDirection.West)
+            {
+                Point2D pointInFront = pointToScan.West.West;
+                if (!ScanShufflesRecursivly(pointInFront, move, map, shuffles))
+                    return false;
+
+                shuffles.Add(new(pointToScan, m => (m[pointInFront], m[pointToScan.West], m[pointToScan]) = (m[pointToScan.West], m[pointToScan], m[pointInFront])));
+                return true;
+            }
+            Point2D rightBox = pointToScan;
+            Point2D leftBox = rightBox.West;
+            Point2D rightBoxInfront = rightBox.GetPointInDirection(move);
+            Point2D leftBoxInFront = rightBoxInfront.West;
+            return ScanWideBox(move, map, shuffles, leftBox, rightBox, leftBoxInFront, rightBoxInfront);
         }
 
         return false;
-
     }
 
-    public static bool ScanMoveBox(Point2D boxLeft, Point2D boxRight, IMove move, Map2D<IMapObject> map, List<Action<Map2D<IMapObject>>> shuffleMoves)
+    private static bool ScanWideBox(CardinalDirection move, Map2D<char> map, List<Shuffle> shuffles, Point2D leftBox, Point2D rightBox, Point2D leftBoxInFront, Point2D rightBoxInfront)
     {
-        switch (move.Direction)
+        bool shuffleOk = false;
+        if (map[leftBoxInFront] == '[' && map[rightBoxInfront] == ']')
         {
-            case CardinalDirection.West:
-                Point2D pointInfrontWest = boxLeft.West;
-                if (ScanMove(pointInfrontWest, move, map, shuffleMoves))
-                {
-                    shuffleMoves.Add(x => (x[pointInfrontWest], x[boxLeft], x[boxRight]) = (x[boxLeft], x[boxRight], x[pointInfrontWest]));
-                    return true;
-                }
-                return false;
-            case CardinalDirection.East:
-                Point2D pointInfrontEast = boxRight.East;
-                if (ScanMove(pointInfrontEast, move, map, shuffleMoves))
-                {
-                    shuffleMoves.Add(x => (x[boxLeft], x[boxRight], x[pointInfrontEast]) = (x[pointInfrontEast], x[boxLeft], x[boxRight]));
-                    return true;
-                }
-                return false;
-            case CardinalDirection.North:
-            case CardinalDirection.South:
-                Point2D leftInfront = boxLeft.GetPointInDirection(move.Direction);
-                Point2D rightInfront = boxRight.GetPointInDirection(move.Direction);
-                bool moveSucess = false;
-                if (map[leftInfront] is LeftBox && map[rightInfront] is RightBox)
-                    moveSucess = ScanMoveBox(leftInfront, rightInfront, move, map, shuffleMoves);
-                else
-                    moveSucess = ScanMove(leftInfront, move, map, shuffleMoves) && ScanMove(rightInfront, move, map, shuffleMoves);
-                if (moveSucess)
-                {
-                    shuffleMoves.Add(x => (x[leftInfront], x[boxLeft]) = (x[boxLeft], x[leftInfront]));
-                    shuffleMoves.Add(x => (x[rightInfront], x[boxRight]) = (x[boxRight], x[rightInfront]));
-                    return true;
-                }
-                return false;
-            default:
-                return false;
+            //if (map[leftBoxInFront.GetPointInDirection(move)] == '#' || map[rightBoxInfront.GetPointInDirection(move)] == '#')
+            //    shuffleOk = false;
+            //if (map[leftBoxInFront.GetPointInDirection(move)] == '.' && map[rightBoxInfront.GetPointInDirection(move)] == '.')
+            //    shuffleOk = true;
+            shuffleOk = ScanShufflesRecursivly(leftBoxInFront, move, map, shuffles);
         }
+        else
+            shuffleOk = ScanShufflesRecursivly(leftBoxInFront, move, map, shuffles) && ScanShufflesRecursivly(rightBoxInfront, move, map, shuffles);
 
+        if (!shuffleOk)
+            return false;
+
+        shuffles.Add(new(leftBox, m => (m[leftBox], m[leftBoxInFront]) = (m[leftBoxInFront], m[leftBox])));
+        shuffles.Add(new(rightBox, m => (m[rightBox], m[rightBoxInfront]) = (m[rightBoxInfront], m[rightBox])));
+        return true;
     }
-
 
     public static string ExpandMapString(string input)
         => input
@@ -120,114 +151,31 @@ public class Day15Puzzle02 : Puzzle
         .Replace("O", "[]")
         .Replace("@", "@.");
 
-    public static (Map2D<IMapObject>, List<IMove>) ParseInputs(string input)
+    public static (Map2D<char>, List<CardinalDirection>) ParseInputs(string input)
     {
         var mapAndMovesStrings = input.Split("\n\n");
         var mapString = ExpandMapString(mapAndMovesStrings[0]);
-        var mapStrings = mapString.Split('\n');
         var movesString = mapAndMovesStrings[1].Replace("\n", string.Empty);
 
-        int yLength = mapStrings.Length;
-        int xLength = mapStrings[0].Length;
-        IMapObject[,] mapArray = new IMapObject[xLength, yLength];
-        for (int y = 0; y < yLength; y++)
+        Map2D<char> map = Map2D.ParseInput(mapString);
+
+        List<CardinalDirection> moves = movesString
+            .Select(CardinalDirectionExtentions.ArrowToCardinalDirection)
+            .ToList();
+
+        return (map, moves);
+    }
+
+    public readonly struct Shuffle
+    {
+        public Shuffle(Point2D target, Action<Map2D<char>> action)
         {
-            var mapLine = mapStrings[y];
-            for (int x = 0; x < xLength; x++)
-            {
-                var mapChar = mapLine[x];
-                mapArray[x, y] = mapChar switch
-                {
-                    '#' => new Wall(),
-                    '.' => new Floor(),
-                    '[' => new LeftBox(),
-                    ']' => new RightBox(),
-                    '@' => new Robot(),
-                    _ => throw new NotImplementedException(),
-                };
-            }
+            Target = target;
+            Action = action;
         }
 
-        List<IMove> moves = [];
-        foreach (var move in movesString)
-        {
-            IMove moveObject = move switch
-            {
-                '<' => new MoveLeft(),
-                '^' => new MoveUp(),
-                '>' => new MoveRight(),
-                'v' => new MoveDown(),
-                _ => throw new NotImplementedException(),
-            };
-            moves.Add(moveObject);
-        }
-
-        return (new(mapArray),  moves);
+        public Point2D Target { get; }
+        public Action<Map2D<char>> Action { get; }
     }
 
-    public interface IMove
-    {
-        string ToString();
-        CardinalDirection Direction { get; }
-    }
-
-    public readonly struct MoveUp : IMove
-    {
-        public CardinalDirection Direction => CardinalDirection.North;
-
-        public override string ToString()
-            => "^";
-    }
-    public readonly struct MoveDown : IMove
-    {
-        public CardinalDirection Direction => CardinalDirection.South;
-        public override string ToString()
-            => "v";
-    }
-    public readonly struct MoveLeft : IMove
-    {
-        public CardinalDirection Direction => CardinalDirection.West;
-        public override string ToString()
-            => "<";
-    }
-    public readonly struct MoveRight : IMove
-    {
-        public CardinalDirection Direction => CardinalDirection.East;
-        public override string ToString()
-            => ">";
-    }
-
-    public interface IMapObject
-    {
-        string ToString();
-    }
-
-    public readonly struct Floor : IMapObject
-    {
-        public override string ToString()
-            => ".";
-    }
-
-    public readonly struct Wall : IMapObject
-    {
-        public override string ToString()
-            => "#";
-    }
-
-    public readonly struct LeftBox : IMapObject
-    {
-        public override string ToString()
-            => "[";
-    }
-    public readonly struct RightBox : IMapObject
-    {
-        public override string ToString()
-            => "]";
-    }
-
-    public readonly struct Robot : IMapObject
-    {
-        public override string ToString()
-            => "@";
-    }
 }

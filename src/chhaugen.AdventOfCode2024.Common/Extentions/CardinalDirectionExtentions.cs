@@ -42,4 +42,24 @@ public static class CardinalDirectionExtentions
             CardinalDirection.South => Axis2D.X,
             _ => throw new NotImplementedException(),
         };
+
+    public static CardinalDirection ArrowToCardinalDirection(this char @char)
+        => @char switch
+        {
+            '^' => CardinalDirection.North,
+            '>' => CardinalDirection.East,
+            'v' => CardinalDirection.South,
+            '<' => CardinalDirection.West,
+            _ => throw new NotImplementedException(),
+        };
+
+    public static char ToArrow(this CardinalDirection direction)
+        => direction switch
+        {
+            CardinalDirection.North => '^',
+            CardinalDirection.East => '>',
+            CardinalDirection.South => 'v',
+            CardinalDirection.West => '<',
+            _ => throw new NotImplementedException(),
+        };
 }
