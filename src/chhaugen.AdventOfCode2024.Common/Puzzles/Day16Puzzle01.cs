@@ -1,6 +1,5 @@
 ﻿using chhaugen.AdventOfCode2024.Common.Extentions;
 using chhaugen.AdventOfCode2024.Common.Structures;
-using System.Threading.Tasks.Dataflow;
 
 namespace chhaugen.AdventOfCode2024.Common.Puzzles;
 public class Day16Puzzle01 : Puzzle
@@ -13,6 +12,8 @@ public class Day16Puzzle01 : Puzzle
     {
         Map2D<char> map = Map2D.ParseInput(input);
 
+        var whiteSpaceCount = map.CountOf('.');
+
         Point2D start = map
             .AsPointEnumerable()
             .First(x => map[x] == 'S');
@@ -23,27 +24,129 @@ public class Day16Puzzle01 : Puzzle
 
         Reindeer reindeer = new(start, CardinalDirection.East);
 
-        var graf = CreateReindeerPathGraf(reindeer, map);
+        RemoveBlindSpots(map);
+        RemoveLoops(map);
+        
+        Node<Reindeer>? graf = null;
 
-            var endLeafs = graf
-                .GetLeafs()
-            .Where(x => map[x.Value.Position] == 'E')
-                .ToList();
+        var stackSize = 10000000;
+        ThreadStart threadStart = () => graf = CreateReindeerPathGraf(reindeer, map);
+        Thread grafThread = new(threadStart, stackSize);
 
-            var endLeafCount = endLeafs.Count();
+        grafThread.Start();
+        grafThread.Join();
 
-            var paths = endLeafs
-                .Select(x => x.GetAncestors().Select(x => x.Value).ToList())
-                .ToList();
+        var endLeafs = graf
+            .GetLeafs()
+        .Where(x => map[x.Value.Position] == 'E')
+            .ToList();
 
-            paths.ForEach(x => x.Reverse());
+        var endLeafCount = endLeafs.Count();
 
-            var scores = paths
-                .Select(GetScore)
-                .ToList();
-            var minScore = scores.Min();
+        var paths = endLeafs
+            .Select(x => x.GetAncestors().Select(x => x.Value).ToList())
+            .ToList();
+
+        paths.ForEach(x => x.Reverse());
+
+        var scores = paths
+            .Select(GetScore)
+            .ToList();
+        var minScore = scores.Min();
 
         return Task.FromResult(minScore.ToString());
+    }
+
+    public void RemoveBlindSpots(Map2D<char> map)
+    {
+        List<Point2D> blindSpots = [];
+        _progressOutput(map.PrintMap());
+        do
+        {
+            blindSpots = map
+                .AsPointEnumerable()
+                .Where(p => map[p] == '.' && PathWaysCount(p, map) == 1)
+                .ToList();
+
+            blindSpots.ForEach(x => map[x] = '#');
+            _progressOutput(map.PrintMap());
+
+        } while (blindSpots.Count > 0);
+    }
+
+    public void RemoveLoops(Map2D<char> map)
+    {   
+        Point2D startPoint = default;
+        do
+        {
+            startPoint = map
+                .AsPointEnumerable()
+                .FirstOrDefault(p => map[p] == '.' && PathWaysCount(p, map) == 2);
+
+            var loopPoints = HugWallLeftBackToStart(startPoint, CardinalDirection.West, startPoint, map).ToList();
+            List<(Point2D, int)> loopEntries = [];
+
+            for (int i = 0; i < loopPoints.Count; i++)
+            {
+                var loopPoint = loopPoints[i];
+                if (PathWaysCount(loopPoint, map) > 2)
+                    loopEntries.Add((loopPoint, i));
+            }
+
+            if (loopEntries.Count == 2)
+            {
+                var loopEntry1 = loopEntries[0];
+                var loopEntry2 = loopEntries[1];
+
+                var length1 = Math.Abs(loopEntry1.Item2 - loopEntry2.Item2);
+                var legngt2 = loopPoints.Count - 1 - length1;
+
+                if (length1 > legngt2)
+                {
+                    Span<Point2D> span1 = loopPoints.
+                }
+            }
+
+
+        } while (startPoint != default);
+    }
+
+    public IEnumerable<Point2D> HugWallLeftBackToStart(Point2D currentPoint, CardinalDirection currentDirection, Point2D start, Map2D<char> map)
+    {
+        Point2D pointInFront = currentPoint.GetPointInDirection(currentDirection);
+        Point2D pointToLeft = currentPoint.GetPointInDirection(currentDirection.TurnAntiClockwise());
+        if (pointInFront == start)
+        {
+        }
+        else if (map[pointToLeft] == '.')
+        {
+            foreach (var p in HugWallLeftBackToStart(pointToLeft, currentDirection.TurnAntiClockwise(), start, map))
+                yield return p;
+            yield return currentPoint;
+        }
+        else if (map[pointInFront] == '.')
+        {
+            foreach (var p in HugWallLeftBackToStart(pointInFront, currentDirection, start, map))
+                yield return p;
+            yield return currentPoint;
+        }
+        else
+        {
+            foreach (var p in HugWallLeftBackToStart(currentPoint, currentDirection.TurnAntiClockwise(), start, map))
+                yield return p;
+        }
+    }
+
+    public static int PathWaysCount(Point2D point, Map2D<char> map)
+    {
+        int count = 4;
+        foreach(CardinalDirection direction in Enum.GetValues<CardinalDirection>())
+        {
+            var pointInDirection = point.GetPointInDirection(direction);
+            if (map[pointInDirection] == '#')
+                count--;
+        }
+        return count;
     }
 
     public static int GetScore(IEnumerable<Reindeer> reindeers)
@@ -70,29 +173,39 @@ public class Day16Puzzle01 : Puzzle
         return score;
     }
 
-    public  Node<Reindeer> CreateReindeerPathGraf(Reindeer start, Map2D<char> map)
+    public Node<Reindeer> CreateReindeerPathGraf(Reindeer start, Map2D<char> map)
     {
         List<Point2D> breadcrumbs = [];
-        Node<Reindeer> root = ScanPathsRecursivly(start, map, breadcrumbs)
+        Dictionary<Reindeer, Node<Reindeer>> memory = [];
+        Node<Reindeer> root = ScanPathsRecursivly(start, map, breadcrumbs, memory)
             ?? throw new InvalidOperationException("Somehow the root node is null");
         return root;
     }
 
-    public Node<Reindeer>? ScanPathsRecursivly(Reindeer reindeer, Map2D<char> map, List<Point2D> breadcrumbs)
+    public Node<Reindeer>? ScanPathsRecursivly(Reindeer reindeer, Map2D<char> map, List<Point2D> breadcrumbs, Dictionary<Reindeer, Node<Reindeer>> memory)
     {
         Node<Reindeer> parent = new(reindeer);
         var reindeersToCheck = GetReindeersToCheck(reindeer);
         foreach (var reindeerToCheck in reindeersToCheck)
         {
-            if (map[reindeerToCheck.Position] == '.' && !breadcrumbs.Contains(reindeerToCheck.Position))
+            if (map[reindeerToCheck.Position] == '.')
             {
-                breadcrumbs.Add(reindeerToCheck.Position);
-                var newChild = ScanPathsRecursivly(reindeerToCheck, map, [.. breadcrumbs]);
-                if (newChild is null)
-                    continue;
-                newChild.Parent = parent;
-                _progressOutput(PrintNode(newChild, map));
-                parent.Children.Add(newChild);
+                if (memory.TryGetValue(reindeerToCheck, out var previousNode))
+                {
+                    var newChild = previousNode.Clone(parent);
+                    parent.Children.Add(newChild);
+                }
+                else if (!breadcrumbs.Contains(reindeerToCheck.Position))
+                {
+                    breadcrumbs.Add(reindeerToCheck.Position);
+                    var newChild = ScanPathsRecursivly(reindeerToCheck, map, [.. breadcrumbs], memory);
+                    if (newChild is null)
+                        continue;
+                    newChild.Parent = parent;
+                    memory.Add(reindeerToCheck, newChild);
+                    //_progressOutput(PrintNode(newChild, map));
+                    parent.Children.Add(newChild);
+                }
             }
             else if (map[reindeerToCheck.Position] == 'E')
                 parent.Children.Add(new(reindeerToCheck, parent));

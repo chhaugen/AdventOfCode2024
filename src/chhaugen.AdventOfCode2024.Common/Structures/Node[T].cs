@@ -63,8 +63,15 @@ public class Node<T> : ICloneable
         yield return this;
     }
 
-    public Node<T> Clone()
-        => new(Value, Parent, [.. Children]);
+    public Node<T> Clone(Node<T>? newParent = null)
+    {
+        Node<T> newNode = new(Value, newParent);
+        foreach (var child in Children)
+        {
+            newNode.Children.Add(child.Clone(newNode));
+        }
+        return newNode;
+    }
 
     object ICloneable.Clone()
         => Clone();
