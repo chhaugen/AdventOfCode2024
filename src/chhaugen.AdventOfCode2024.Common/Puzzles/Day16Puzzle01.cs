@@ -37,7 +37,7 @@ public class Day16Puzzle01 : Puzzle
         return Task.FromResult(eValue.Cost.ToString());
     }
 
-    private static string PrintMap(Map2D<MapObject> map)
+    public static string PrintMap(Map2D<MapObject> map)
     {
         int maxNum = map
             .AsEnumerable()
@@ -53,6 +53,7 @@ public class Day16Puzzle01 : Puzzle
         return map.PrintMap(x => x switch
         {
             Wall wall => wallString,
+            Cross cross => $"X{cross.Cost.ToString(toStringCode)}X",
             Floor floor => $"({floor.Cost.ToString(toStringCode)})",
             _ => throw new NotImplementedException(),
         });
@@ -175,6 +176,16 @@ public class Day16Puzzle01 : Puzzle
     {
         public override string ToString()
             => "E";
+    }
+
+    public class Cross : Floor
+    {
+        public Cross(Floor floor)
+        {
+            Cost = floor.Cost;
+        }
+        public override string ToString()
+            => "X";
     }
 
 
