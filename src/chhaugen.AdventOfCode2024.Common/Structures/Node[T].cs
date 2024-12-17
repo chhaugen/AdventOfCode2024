@@ -51,6 +51,18 @@ public class Node<T> : ICloneable
         }
     }
 
+    public IEnumerable<Node<T>> GetAllChildren()
+    {
+        if (!IsLeaf)
+            foreach (var child in Children)
+            {
+                var innerChildren = child.GetAllChildren();
+                foreach (var innerChild in innerChildren)
+                    yield return innerChild;
+            }
+        yield return this;
+    }
+
     public Node<T> Clone()
         => new(Value, Parent, [.. Children]);
 

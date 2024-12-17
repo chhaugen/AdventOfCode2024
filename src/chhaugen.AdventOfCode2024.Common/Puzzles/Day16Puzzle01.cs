@@ -25,23 +25,23 @@ public class Day16Puzzle01 : Puzzle
 
         var graf = CreateReindeerPathGraf(reindeer, map);
 
-        var endLeafs = graf
-            .GetLeafs()
+            var endLeafs = graf
+                .GetLeafs()
             .Where(x => map[x.Value.Position] == 'E')
-            .ToList();
+                .ToList();
 
-        var endLeafCount = endLeafs.Count();
+            var endLeafCount = endLeafs.Count();
 
-        var paths = endLeafs
-            .Select(x => x.GetAncestors().Select(x => x.Value).ToList())
-            .ToList();
+            var paths = endLeafs
+                .Select(x => x.GetAncestors().Select(x => x.Value).ToList())
+                .ToList();
 
-        paths.ForEach(x => x.Reverse());
+            paths.ForEach(x => x.Reverse());
 
-        var scores = paths
-            .Select(GetScore)
-            .ToList();
-        var minScore = scores.Min();
+            var scores = paths
+                .Select(GetScore)
+                .ToList();
+            var minScore = scores.Min();
 
         return Task.FromResult(minScore.ToString());
     }
@@ -70,15 +70,15 @@ public class Day16Puzzle01 : Puzzle
         return score;
     }
 
-    public static Node<Reindeer> CreateReindeerPathGraf(Reindeer start, Map2D<char> map)
+    public  Node<Reindeer> CreateReindeerPathGraf(Reindeer start, Map2D<char> map)
     {
         List<Point2D> breadcrumbs = [];
-        List<Point2D> deadEnds = [];
-        Node<Reindeer> root = ScanPathsRecursivly(start, map, breadcrumbs, deadEnds);
+        Node<Reindeer> root = ScanPathsRecursivly(start, map, breadcrumbs)
+            ?? throw new InvalidOperationException("Somehow the root node is null");
         return root;
     }
 
-    public static Node<Reindeer> ScanPathsRecursivly(Reindeer reindeer, Map2D<char> map, List<Point2D> breadcrumbs, List<Point2D> deadEnds)
+    public Node<Reindeer>? ScanPathsRecursivly(Reindeer reindeer, Map2D<char> map, List<Point2D> breadcrumbs)
     {
         Node<Reindeer> parent = new(reindeer);
         var reindeersToCheck = GetReindeersToCheck(reindeer);
@@ -87,13 +87,18 @@ public class Day16Puzzle01 : Puzzle
             if (map[reindeerToCheck.Position] == '.' && !breadcrumbs.Contains(reindeerToCheck.Position))
             {
                 breadcrumbs.Add(reindeerToCheck.Position);
-                var newChild = ScanPathsRecursivly(reindeerToCheck, map, [.. breadcrumbs], deadEnds);
+                var newChild = ScanPathsRecursivly(reindeerToCheck, map, [.. breadcrumbs]);
+                if (newChild is null)
+                    continue;
                 newChild.Parent = parent;
+                _progressOutput(PrintNode(newChild, map));
                 parent.Children.Add(newChild);
             }
             else if (map[reindeerToCheck.Position] == 'E')
                 parent.Children.Add(new(reindeerToCheck, parent));
         }
+        if (parent.IsLeaf)
+            return null;
         return parent;
     }
 
@@ -111,6 +116,22 @@ public class Day16Puzzle01 : Puzzle
         yield return new(pointLeft, left);
     }
 
+    public static string PrintNode(Node<Reindeer> node, Map2D<char> map)
+    {
+        var mapCopy = map.Clone();
+
+        foreach (var child in node.GetAllChildren())
+        {
+            if (map[child.Value.Position] is '.')
+                mapCopy[child.Value.Position] = child.Value.Direction.ToArrow();
+        }
+        mapCopy[node.Value.Position] = 'X';
+        foreach(var parent in node.GetAncestors().Skip(1))
+        {
+            mapCopy[parent.Value.Position] = parent.Value.Direction.ToArrow();
+        }
+        return mapCopy.PrintMap();
+    }
 
     public readonly struct Reindeer : IEquatable<Reindeer> 
     {
