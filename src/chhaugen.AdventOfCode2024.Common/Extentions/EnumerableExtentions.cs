@@ -22,6 +22,27 @@ public static class EnumerableExtentions
         }
         return isInIncreasingOrder;
     }
+    public static bool AllIncreasingByAtleast(this IEnumerable<int> values, int increase)
+    {
+        bool isInIncreasingOrder = true;
+        int? previousValue = null;
+        foreach (var value in values)
+        {
+            if (!previousValue.HasValue)
+            {
+                previousValue = value;
+                continue;
+            }
+
+            if (previousValue <= value && previousValue - value >= increase)
+            {
+                isInIncreasingOrder = false;
+                break;
+            }
+            previousValue = value;
+        }
+        return isInIncreasingOrder;
+    }
 
     public static bool AllDecreasing(this IEnumerable<int> values)
     {
@@ -36,6 +57,28 @@ public static class EnumerableExtentions
             }
 
             if (previousValue >= value)
+            {
+                isInDecreasingOrder = false;
+                break;
+            }
+            previousValue = value;
+        }
+        return isInDecreasingOrder;
+    }
+
+    public static bool AllDecreasingByAtleast(this IEnumerable<int> values, int increase)
+    {
+        bool isInDecreasingOrder = true;
+        int? previousValue = null;
+        foreach (var value in values)
+        {
+            if (!previousValue.HasValue)
+            {
+                previousValue = value;
+                continue;
+            }
+
+            if (previousValue <= value && previousValue - value < increase)
             {
                 isInDecreasingOrder = false;
                 break;

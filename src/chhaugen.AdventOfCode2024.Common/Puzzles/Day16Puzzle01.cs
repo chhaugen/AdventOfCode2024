@@ -1,5 +1,6 @@
 ﻿using chhaugen.AdventOfCode2024.Common.Extentions;
 using chhaugen.AdventOfCode2024.Common.Structures;
+using static chhaugen.AdventOfCode2024.Common.Puzzles.Day16Puzzle01;
 
 namespace chhaugen.AdventOfCode2024.Common.Puzzles;
 public class Day16Puzzle01 : Puzzle
@@ -22,188 +23,173 @@ public class Day16Puzzle01 : Puzzle
             .First(x => map[x] is 'E');
 
 
-        List<Intersection> intersections = GetIntersectionPoints(map)
-            .Select(x => new Intersection(x))
-            .ToList();
-        Intersection? startIntersection = intersections.FirstOrDefault(x => x.Point == start);
-        if (startIntersection is null)
-        {
-            startIntersection = new(start);
-            intersections.Add(startIntersection);
-        }
-        Intersection? endIntersection = intersections.FirstOrDefault(x => x.Point == end);
-        if (endIntersection is null)
-        {
-            endIntersection = new(end);
-            intersections.Add(endIntersection);
-        }
-        intersections.ForEach(i => i.Edges = GetEdges(i.Point, map, intersections).ToArray());
+        List<Intersection> intersections = TraverseIntersections(new(start), map);
+        Intersection startIntersection = intersections.First(x => x.Point == start);
+        Intersection endIntersection = intersections.First(x => x.Point == end);
 
+        var endNode = GetAllShortestPathsDijkstras(startIntersection, endIntersection, intersections);
 
-        var drawMap = map.Clone();
-        intersections.ForEach(x => drawMap[x.Point] = 'X');
-        _progressOutput(drawMap.PrintMap());
-
-        var route = CalculateShortestPath([.. intersections], startIntersection, endIntersection)
-            ?? throw new InvalidOperationException("Could not find route!");
-
-        foreach (var routePart in route)
-        {
-            _progressOutput($"{routePart.Item1.Point}: {routePart.Item2}");
-        }
-
-        //var sum = route.Max(x => x.Item2 -2) + (1000 * (route.Count - 3));
-        var sum = route.Max(x => x.Item2);
-
-        var drawMap2 = map.Clone();
-        route.ForEach(x => drawMap2[x.Item1.Point] = 'X');
-        _progressOutput(drawMap2.PrintMap());
-
-        return Task.FromResult(sum.ToString());
+        return Task.FromResult(endNode.Value.Distance.ToString());
     }
 
-    public static List<(Intersection, int)>? CalculateShortestPath(Intersection[] intersections, Intersection startNode, Intersection endNode)
+    public static Node<(Intersection Intersection, int Distance)> GetAllShortestPathsDijkstras(Intersection start, Intersection end, List<Intersection> allIntersections)
     {
-        // Initialize all the distances to max, and the "previous" intersection to null
-        var distances = intersections
-            .Select((intersection, i) => (intersection, details: (Previous: (Intersection?)null, Distance: int.MaxValue)))
-            .ToDictionary(x => x.intersection, x => x.details);
+        List<Intersection> closed = [];
+        Dictionary<Intersection, DijkstaEntry> entries = allIntersections.ToDictionary(x => x, x => new DijkstaEntry());
+        entries[start].Distance = 0;
 
-        // priority queue for tracking shortest distance from the start node to each other node
-        var queue = new PriorityQueue<Intersection, int>();
-
-        // initialize the start node at a distance of 0
-        distances[startNode] = (null, 0);
-
-        // add the start node to the queue for processing
-        queue.Enqueue(startNode, 0);
-
-        // as long as we have a node to process, keep looping
-        while (queue.Count > 0)
+        List<Intersection> currentIntersections = [start];
+        while (currentIntersections.Count > 0)
         {
-            // remove the node with the current smallest distance from the start node
-            var current = queue.Dequeue();
-
-            // if this is the node we want, then we're finished
-            // as we must already have the shortest route!
-            if (current == endNode)
+            List<Intersection> nextIntersections = [];
+            foreach (var currentIntersection in currentIntersections)
             {
-                // build the route by tracking back through previous
-                return BuildRoute(distances, endNode);
-            }
-
-            // add the node to the "visited" list
-            var currentNodeDistance = distances[current].Distance;
-
-            foreach (var edge in current.Edges)
-            {
-                // get the current shortest distance to the connected node
-                int distance = distances[edge.ConnectedTo].Distance;
-                // calculate the new cumulative distance to the edge
-                int newDistance = currentNodeDistance + edge.Distance;
-
-                // if the new distance is shorter, then it represents a new 
-                // shortest-path to the connected edge
-                if (newDistance < distance)
+                var currentEntry = entries[currentIntersection];
+                foreach (var edge in currentIntersection.Edges.Where(x => !closed.Contains(x.ConnectedTo)))
                 {
-                    // update the shortest distance to the connection
-                    // and record the "current" node as the shortest
-                    // route to get there 
-                    distances[edge.ConnectedTo] = (current, newDistance);
+                    var edgeEntry = entries[edge.ConnectedTo];
+                    int newDistance = currentEntry.Distance + edge.Distance + 1000;
 
-                    // if the node is already in the queue, first remove it
-                    queue.Remove(edge.ConnectedTo, out _, out _);
-                    // now add the node with the new distance
-                    queue.Enqueue(edge.ConnectedTo, newDistance);
+                    if (newDistance == edgeEntry.Distance)
+                    {
+                        if(!edgeEntry.Parents.Contains(currentIntersection))
+                            edgeEntry.Parents.Add(currentIntersection);
+                    }
+                    else if (newDistance < edgeEntry.Distance)
+                    {
+                        edgeEntry.Distance = newDistance;
+                        edgeEntry.Parents.Clear();
+                        edgeEntry.Parents.Add(currentIntersection);
+                    }
+
+                    if (!nextIntersections.Contains(edge.ConnectedTo))
+                        nextIntersections.Add(edge.ConnectedTo);
+                }
+                closed.Add(currentIntersection);
+            }
+            currentIntersections = nextIntersections;
+        }
+
+        var endEntry = entries[end];
+        Node<(Intersection Intersection, int Distance)> root = new((end, endEntry.Distance));
+        List<Node<(Intersection Intersection, int Distance)>> currentReverseIntersections = [root];
+        while (currentReverseIntersections.Count > 0)
+        {
+            List<Node<(Intersection Intersection, int Distance)>> nextReverseIntersections = [];
+            foreach (var currentReverseIntersectionNode in currentReverseIntersections)
+            {
+                var reverseIntersection = currentReverseIntersectionNode.Value.Intersection;
+                //var Distance = currentReverseIntersectionNode.Value.Distance;
+                var entry = entries[reverseIntersection];
+                foreach (var entryParent in entry.Parents)
+                {
+                    var entryParentEntry = entries[entryParent];
+                    Node<(Intersection Intersection, int Distance)> newChild = new((entryParent, entryParentEntry.Distance), currentReverseIntersectionNode);
+                    currentReverseIntersectionNode.Children.Add(newChild);
+                    nextReverseIntersections.Add(newChild);
                 }
             }
+            currentReverseIntersections = nextReverseIntersections;
         }
 
-        // if we don't have anything left, then we've processed everything,
-        // but didn't find the node we want
-        return null;
+        return root;
     }
 
-    public static List<(Intersection, int)> BuildRoute(Dictionary<Intersection, (Intersection? previous, int Distance)> distances, Intersection endNode)
+    public static List<Intersection> TraverseIntersections(Intersection start, Map2D<char> map)
     {
-        var route = new List<(Intersection, int)>();
-        Intersection? prev = endNode;
-
-        // Keep examining the previous version until we
-        // get back to the start node
-        while (prev is not null)
+        var directions = Enum.GetValues<CardinalDirection>();
+        List<Intersection> allIntersections = [];
+        List<Intersection> currentlyScanning = [start];
+        while (currentlyScanning.Count > 0)
         {
-            var current = prev;
-            (prev, var distance) = distances[current];
-            route.Add((current, distance));
-        }
-
-        // reverse the route
-        route.Reverse();
-        return route;
-    }
-
-    public static List<Edge> GetEdges(Point2D intersection, Map2D<char> map, List<Intersection> allIntersections)
-    {
-        List<Edge> edgesFound = [];
-        List<(CardinalDirection Direction, Point2D Point, int distance)> stillSearching = Enum.GetValues<CardinalDirection>()
-            .Select(x => (x, intersection, 0))
-            .ToList();
-
-        while (stillSearching.Count > 0)
-        {
-            List<(CardinalDirection Direction, Point2D Point, int distance)> toBeSearched = [];
-            foreach ((var searchDirection, var searchPoint, var searchDistance) in stillSearching)
+            List<Intersection> toBeScanned = [];
+            foreach (var currentIntersection in currentlyScanning)
             {
-                Point2D pointInFront = searchPoint.GetPointInDirection(searchDirection);
-                Intersection? connected = allIntersections.FirstOrDefault(x => x.Point == searchPoint);
-                if (map[pointInFront] is '#')
+                var currentPoint = currentIntersection.Point;
+                foreach (var direction in directions)
                 {
-                    if (connected is not null && searchPoint != intersection)
-                        edgesFound.Add(new(connected, searchDistance + 1000));
-                }
-                else if (connected is not null && searchPoint != intersection)
-                {
-                    edgesFound.Add(new(connected, searchDistance + 1000));
-                    toBeSearched.Add((searchDirection, pointInFront, searchDistance + 1));
-                }
-                else
-                {
-                    toBeSearched.Add((searchDirection, pointInFront, searchDistance + 1));
+                    Point2D currentPosition = currentIntersection.Point;
+                    int distance = 0;
+                    bool hitWall = false;
+                    do
+                    {
+                        distance++;
+                        Point2D pointInFront = currentPosition.GetPointInDirection(direction);
+                        Point2D twiceInFront = pointInFront.GetPointInDirection(direction);
+                        Point2D clockwisePoint = pointInFront.GetPointInDirection(direction.TurnClockwise());
+                        Point2D antiClockwisePoint = pointInFront.GetPointInDirection(direction.TurnAntiClockwise());
+
+                        hitWall = map[pointInFront] is '#';
+                        if (hitWall)
+                            break;
+
+                        bool pointIsIntersection = map[twiceInFront] is '#' || map[clockwisePoint] is not '#' || map[antiClockwisePoint] is not '#';
+
+                        if (pointIsIntersection)
+                        {
+                            Intersection? hitIntersection = allIntersections.FirstOrDefault(x => x.Point == pointInFront);
+                            if (hitIntersection is null)
+                            {
+                                hitIntersection = new(pointInFront);
+                                allIntersections.Add(hitIntersection);
+                                toBeScanned.Add(hitIntersection);
+                            }
+                            if (!currentIntersection.Edges.Any(x => x.ConnectedTo == hitIntersection))
+                                currentIntersection.Edges.Add(new(hitIntersection, distance));
+                        }
+
+                        currentPosition = pointInFront;
+                    } while (!hitWall);
                 }
             }
-            stillSearching = toBeSearched;
+            currentlyScanning = toBeScanned;
         }
-        return edgesFound;
+        return allIntersections;
     }
 
-    public static IEnumerable<Point2D> GetIntersectionPoints(Map2D<char> map)
+    public class DijkstaEntry
     {
-        foreach (var point in map.AsPointEnumerable())
+        public int Distance { get; set; } = int.MaxValue;
+        public List<Intersection> Parents { get; set; } = [];
+        public override string ToString()
+            => $"{nameof(Distance)}: {Distance}, [{string.Join(',', Parents.Select(x => x.Point))}]";
+    }
+
+    public class Intersection : IEquatable<Intersection>
+    {
+        public Intersection(Point2D point)
         {
-            if (!(1 <= point.X && point.X < map.Width - 1 && 1 <= point.Y && point.Y < map.Height - 1))
-                continue;
-
-            if (map[point] is '#')
-                continue;
-
-            foreach (var direction in Enum.GetValues<CardinalDirection>())
-            {
-                Point2D pointInfront = point.GetPointInDirection(direction);
-                Point2D pointClockwise = point.GetPointInDirection(direction.TurnClockwise());
-                if (map[pointInfront] is not '#' && map[pointClockwise] is not '#')
-                    yield return point;
-            }
+            Point = point;
         }
+
+        public Point2D Point { get; }
+        public List<Edge> Edges { get; set; } = [];
+
+        public bool Equals(Intersection? other)
+            => Point == other?.Point;
+
+        public override string ToString()
+            => $"{Point}, {nameof(Edges)}: {Edges.Count}";
+
+        public override bool Equals(object? obj)
+            => obj is Intersection other && Equals(other);
+
+        public override int GetHashCode()
+            => HashCode.Combine(Point, Edges);
     }
 
-
-    public record Intersection(Point2D Point)
+    public readonly struct Edge
     {
-        public Edge[] Edges { get; set; } = [];
-        public int? DistanceFromStart { get; set; }
-    }
+        public Edge(Intersection connectedTo, int distance)
+        {
+            ConnectedTo = connectedTo;
+            Distance = distance;
+        }
 
-    public record Edge(Intersection ConnectedTo, int Distance);
+        public Intersection ConnectedTo { get; }
+        public int Distance { get; }
+        public override string ToString()
+            => $"{ConnectedTo.Point}, {nameof(Distance)}: {Distance}";
+    }
 
 }
