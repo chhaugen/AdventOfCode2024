@@ -1,6 +1,5 @@
 ﻿using chhaugen.AdventOfCode2024.Common.Extentions;
 using chhaugen.AdventOfCode2024.Common.Structures;
-using static chhaugen.AdventOfCode2024.Common.Puzzles.Day16Puzzle01;
 
 namespace chhaugen.AdventOfCode2024.Common.Puzzles;
 public class Day16Puzzle01 : Puzzle
@@ -23,9 +22,23 @@ public class Day16Puzzle01 : Puzzle
             .First(x => map[x] is 'E');
 
 
-        List<Intersection> intersections = TraverseIntersections(new(start), map);
-        Intersection startIntersection = intersections.First(x => x.Point == start);
-        Intersection endIntersection = intersections.First(x => x.Point == end);
+        Intersection startIntersection = new(start);
+        List<Intersection> intersections = TraverseIntersections(startIntersection, map);
+        Intersection endIntersection = intersections.Single(x => x.Point == end);
+
+        //var trueStartEdges = falseStartIntersection.Edges
+        //    .Where(x => x.ConnectedTo.Point.Y == falseStartIntersection.Point.Y)
+        //    .ToList();
+
+        //var falseStartEdges = falseStartIntersection.Edges
+        //    .Where(x => x.ConnectedTo.Point.X == falseStartIntersection.Point.X)
+        //    .ToList();
+
+        //Intersection trueStartIntersection = new(falseStartIntersection.Point);
+        //intersections.Add(trueStartIntersection);
+        //trueStartIntersection.Edges = trueStartEdges;
+        //trueStartIntersection.Edges.Add(new Edge(falseStartIntersection, 0));
+        //falseStartIntersection.Edges = falseStartEdges;
 
         var endNode = GetAllShortestPathsDijkstras(startIntersection, endIntersection, intersections);
 
@@ -98,7 +111,7 @@ public class Day16Puzzle01 : Puzzle
     public static List<Intersection> TraverseIntersections(Intersection start, Map2D<char> map)
     {
         var directions = Enum.GetValues<CardinalDirection>();
-        List<Intersection> allIntersections = [];
+        List<Intersection> allIntersections = [start];
         List<Intersection> currentlyScanning = [start];
         while (currentlyScanning.Count > 0)
         {
@@ -113,6 +126,7 @@ public class Day16Puzzle01 : Puzzle
                     bool hitWall = false;
                     do
                     {
+
                         distance++;
                         Point2D pointInFront = currentPosition.GetPointInDirection(direction);
                         Point2D twiceInFront = pointInFront.GetPointInDirection(direction);
@@ -134,8 +148,17 @@ public class Day16Puzzle01 : Puzzle
                                 allIntersections.Add(hitIntersection);
                                 toBeScanned.Add(hitIntersection);
                             }
+                            int localDistance = distance;
+                            if (currentIntersection == start && direction == CardinalDirection.East)
+                            {
+                                localDistance -= 1000;
+                            }
+                            if (hitIntersection == start && direction == CardinalDirection.West)
+                            {
+                                localDistance -= 1000;
+                            }
                             if (!currentIntersection.Edges.Any(x => x.ConnectedTo == hitIntersection))
-                                currentIntersection.Edges.Add(new(hitIntersection, distance));
+                                currentIntersection.Edges.Add(new(hitIntersection, localDistance));
                         }
 
                         currentPosition = pointInFront;
