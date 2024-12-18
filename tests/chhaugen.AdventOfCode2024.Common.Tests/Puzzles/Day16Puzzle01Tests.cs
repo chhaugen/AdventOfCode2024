@@ -42,16 +42,16 @@ public class Day16Puzzle01Tests
         Assert.Equal(correctOutput, output);
     }
 
-    //[Fact]
-    //public async Task SolveAsync_UsingRealInput()
-    //{
-    //    // Arrange
-    //    Day16Puzzle01 puzzle = new();
-    //    string input = await _inputs.GetInputAsync(day: 16, "input.txt");
-    //    string correctOutput = 1617819.ToString();
-    //    // Act
-    //    string output = await puzzle.SolveAsync(input);
-    //    // Assert
-    //    Assert.Equal(correctOutput, output);
-    //}
+    [Fact]
+    public async Task SolveAsync_UsingRealInput()
+    {
+        // Arrange
+        Day16Puzzle01 puzzle = new();
+        string input = await _inputs.GetInputAsync(day: 16, "input.txt");
+        string correctOutput = 83444.ToString();
+        // Act
+        string output = await puzzle.SolveAsync(input);
+        // Assert
+        Assert.Equal(correctOutput, output);
+    }
 }

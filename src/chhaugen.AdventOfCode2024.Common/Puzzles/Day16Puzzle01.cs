@@ -8,186 +8,201 @@ public class Day16Puzzle01 : Puzzle
     {
     }
 
+    // thx :) https://andrewlock.net/implementing-dijkstras-algorithm-for-finding-the-shortest-path-between-two-nodes-using-priorityqueue-in-dotnet-9/
     public override Task<string> SolveAsync(string input)
     {
-        Map2D<MapObject> map = Map2D.ParseInput<MapObject>(input, x => x switch
-        {
-            '.' => new Floor(),
-            '#' => new Wall(),
-            'S' => new Start(),
-            'E' => new End(),
-            _ => throw new NotImplementedException(),
-        });
+        Map2D<char> map = Map2D.ParseInput(input);
 
         Point2D start = map
             .AsPointEnumerable()
-            .First(x => map[x] is Start);
+            .First(x => map[x] is 'S');
 
         Point2D end = map
             .AsPointEnumerable()
-            .First(x => map[x] is End);
+            .First(x => map[x] is 'E');
 
-        Reindeer startReindeer = new(start, CardinalDirection.East);
 
-        AddCostsToMap(startReindeer, map);
-        _progressOutput(PrintMap(map));
+        List<Intersection> intersections = GetIntersectionPoints(map)
+            .Select(x => new Intersection(x))
+            .ToList();
+        Intersection? startIntersection = intersections.FirstOrDefault(x => x.Point == start);
+        if (startIntersection is null)
+        {
+            startIntersection = new(start);
+            intersections.Add(startIntersection);
+        }
+        Intersection? endIntersection = intersections.FirstOrDefault(x => x.Point == end);
+        if (endIntersection is null)
+        {
+            endIntersection = new(end);
+            intersections.Add(endIntersection);
+        }
+        intersections.ForEach(i => i.Edges = GetEdges(i.Point, map, intersections).ToArray());
 
-        var eValue = (End)map[end];
 
-        return Task.FromResult(eValue.Cost.ToString());
+        var drawMap = map.Clone();
+        intersections.ForEach(x => drawMap[x.Point] = 'X');
+        _progressOutput(drawMap.PrintMap());
+
+        var route = CalculateShortestPath([.. intersections], startIntersection, endIntersection)
+            ?? throw new InvalidOperationException("Could not find route!");
+
+        foreach (var routePart in route)
+        {
+            _progressOutput($"{routePart.Item1.Point}: {routePart.Item2}");
+        }
+
+        //var sum = route.Max(x => x.Item2 -2) + (1000 * (route.Count - 3));
+        var sum = route.Max(x => x.Item2);
+
+        var drawMap2 = map.Clone();
+        route.ForEach(x => drawMap2[x.Item1.Point] = 'X');
+        _progressOutput(drawMap2.PrintMap());
+
+        return Task.FromResult(sum.ToString());
     }
 
-    public static string PrintMap(Map2D<MapObject> map)
+    public static List<(Intersection, int)>? CalculateShortestPath(Intersection[] intersections, Intersection startNode, Intersection endNode)
     {
-        int maxNum = map
-            .AsEnumerable()
-            .Where(x => x is Floor)
-            .Cast<Floor>()
-            .Select(x => x.Cost)
-            .Max();
-        int numWidth = maxNum.ToString().Length;
-        string toStringCode = $"D{numWidth}";
+        // Initialize all the distances to max, and the "previous" intersection to null
+        var distances = intersections
+            .Select((intersection, i) => (intersection, details: (Previous: (Intersection?)null, Distance: int.MaxValue)))
+            .ToDictionary(x => x.intersection, x => x.details);
 
-        string wallString = new(Enumerable.Range(0, numWidth + 2).Select(_ => '#').ToArray());
+        // priority queue for tracking shortest distance from the start node to each other node
+        var queue = new PriorityQueue<Intersection, int>();
 
-        return map.PrintMap(x => x switch
+        // initialize the start node at a distance of 0
+        distances[startNode] = (null, 0);
+
+        // add the start node to the queue for processing
+        queue.Enqueue(startNode, 0);
+
+        // as long as we have a node to process, keep looping
+        while (queue.Count > 0)
         {
-            Wall wall => wallString,
-            Cross cross => $"X{cross.Cost.ToString(toStringCode)}X",
-            Floor floor => $"({floor.Cost.ToString(toStringCode)})",
-            _ => throw new NotImplementedException(),
-        });
-    }
+            // remove the node with the current smallest distance from the start node
+            var current = queue.Dequeue();
 
-    public static void AddCostsToMap(Reindeer start, Map2D<MapObject> map)
-    {
-        List<Reindeer> currentReindeers = [start];
-        while (currentReindeers.Count > 0)
-        {
-            List<Reindeer> newReindeers = [];
-            foreach (var currentReindeer in currentReindeers)
+            // if this is the node we want, then we're finished
+            // as we must already have the shortest route!
+            if (current == endNode)
             {
-                int currentCost = ((Floor)map[currentReindeer.Position]).Cost;
-                foreach ((int addCost, var reindeerToCheck) in GetReindeersToCheck(currentReindeer))
+                // build the route by tracking back through previous
+                return BuildRoute(distances, endNode);
+            }
+
+            // add the node to the "visited" list
+            var currentNodeDistance = distances[current].Distance;
+
+            foreach (var edge in current.Edges)
+            {
+                // get the current shortest distance to the connected node
+                int distance = distances[edge.ConnectedTo].Distance;
+                // calculate the new cumulative distance to the edge
+                int newDistance = currentNodeDistance + edge.Distance;
+
+                // if the new distance is shorter, then it represents a new 
+                // shortest-path to the connected edge
+                if (newDistance < distance)
                 {
-                    if (map[reindeerToCheck.Position] is Floor newFloor)
-                    {
-                        int newCost = currentCost + addCost;
-                        if (newFloor.Cost == -1 || newCost < newFloor.Cost)
-                        {
-                            newFloor.Cost = newCost;
-                            newReindeers.RemoveAll(x => x.Position == reindeerToCheck.Position);
-                            newReindeers.Add(reindeerToCheck);
-                            //_progressOutput(map.PrintMap());
-                        }
-                    }
+                    // update the shortest distance to the connection
+                    // and record the "current" node as the shortest
+                    // route to get there 
+                    distances[edge.ConnectedTo] = (current, newDistance);
+
+                    // if the node is already in the queue, first remove it
+                    queue.Remove(edge.ConnectedTo, out _, out _);
+                    // now add the node with the new distance
+                    queue.Enqueue(edge.ConnectedTo, newDistance);
                 }
             }
-            currentReindeers = newReindeers;
         }
+
+        // if we don't have anything left, then we've processed everything,
+        // but didn't find the node we want
+        return null;
     }
 
-    public static IEnumerable<(int addCost, Reindeer reindeer)> GetReindeersToCheck(Reindeer reindeer)
+    public static List<(Intersection, int)> BuildRoute(Dictionary<Intersection, (Intersection? previous, int Distance)> distances, Intersection endNode)
     {
-        CardinalDirection right = reindeer.Direction.TurnClockwise();
-        Point2D pointRight = reindeer.Position.GetPointInDirection(right);
-        yield return (1001, new(pointRight, right));
+        var route = new List<(Intersection, int)>();
+        Intersection? prev = endNode;
 
-        Point2D pointInFront = reindeer.Position.GetPointInDirection(reindeer.Direction);
-        yield return (1, new(pointInFront, reindeer.Direction));
-
-        CardinalDirection left = reindeer.Direction.TurnAntiClockwise();
-        Point2D pointLeft = reindeer.Position.GetPointInDirection(left);
-        yield return (1001, new(pointLeft, left));
-    }
-
-    public readonly struct Reindeer : IEquatable<Reindeer>
-    {
-        public Reindeer(Point2D position, CardinalDirection direction)
+        // Keep examining the previous version until we
+        // get back to the start node
+        while (prev is not null)
         {
-            Position = position;
-            Direction = direction;
+            var current = prev;
+            (prev, var distance) = distances[current];
+            route.Add((current, distance));
         }
 
-        public Point2D Position { get; }
-        public CardinalDirection Direction { get; }
-
-        public Reindeer TurnClockwise()
-            => new(Position, Direction.TurnClockwise());
-        public Reindeer TurnAntiClockwise()
-            => new(Position, Direction.TurnAntiClockwise());
-
-        public override string ToString()
-            => $"{Position} {Enum.GetName(Direction)}";
-
-        public override int GetHashCode()
-            => HashCode.Combine(Position, Direction);
-
-        public bool Equals(Reindeer other)
-            => Position == other.Position && Direction == other.Direction;
-
-        public override bool Equals(object? obj)
-            => obj is Reindeer other && Equals(other);
-
-        public static bool operator ==(Reindeer left, Reindeer right)
-        {
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(Reindeer left, Reindeer right)
-        {
-            return !(left == right);
-        }
+        // reverse the route
+        route.Reverse();
+        return route;
     }
 
-    public abstract class MapObject {
-    }
-
-    public class Floor : MapObject
+    public static List<Edge> GetEdges(Point2D intersection, Map2D<char> map, List<Intersection> allIntersections)
     {
-        public Floor()
+        List<Edge> edgesFound = [];
+        List<(CardinalDirection Direction, Point2D Point, int distance)> stillSearching = Enum.GetValues<CardinalDirection>()
+            .Select(x => (x, intersection, 0))
+            .ToList();
+
+        while (stillSearching.Count > 0)
         {
-            Cost = -1;
+            List<(CardinalDirection Direction, Point2D Point, int distance)> toBeSearched = [];
+            foreach ((var searchDirection, var searchPoint, var searchDistance) in stillSearching)
+            {
+                Point2D pointInFront = searchPoint.GetPointInDirection(searchDirection);
+                Intersection? connected = allIntersections.FirstOrDefault(x => x.Point == searchPoint);
+                if (map[pointInFront] is '#')
+                {
+                    if (connected is not null && searchPoint != intersection)
+                        edgesFound.Add(new(connected, searchDistance + 1000));
+                }
+                else if (connected is not null && searchPoint != intersection)
+                {
+                    edgesFound.Add(new(connected, searchDistance + 1000));
+                    toBeSearched.Add((searchDirection, pointInFront, searchDistance + 1));
+                }
+                else
+                {
+                    toBeSearched.Add((searchDirection, pointInFront, searchDistance + 1));
+                }
+            }
+            stillSearching = toBeSearched;
         }
-        
-        public int Cost { get; set; }
-        public override string ToString()
-            => ".";
+        return edgesFound;
     }
 
-    public class Wall : MapObject
+    public static IEnumerable<Point2D> GetIntersectionPoints(Map2D<char> map)
     {
-        public override string ToString()
-            => "#";
-    }
-
-    public class Start : Floor
-    {
-        public Start()
+        foreach (var point in map.AsPointEnumerable())
         {
-            Cost = 0;
+            if (!(1 <= point.X && point.X < map.Width - 1 && 1 <= point.Y && point.Y < map.Height - 1))
+                continue;
+
+            if (map[point] is '#')
+                continue;
+
+            foreach (var direction in Enum.GetValues<CardinalDirection>())
+            {
+                Point2D pointInfront = point.GetPointInDirection(direction);
+                Point2D pointClockwise = point.GetPointInDirection(direction.TurnClockwise());
+                if (map[pointInfront] is not '#' && map[pointClockwise] is not '#')
+                    yield return point;
+            }
         }
-
-        public override string ToString()
-            => "S";
     }
 
-    public class End : Floor
+
+    public record Intersection(Point2D Point)
     {
-        public override string ToString()
-            => "E";
+        public Edge[] Edges { get; set; } = [];
     }
 
-    public class Cross : Floor
-    {
-        public Cross(Floor floor)
-        {
-            Cost = floor.Cost;
-        }
-        public override string ToString()
-            => "X";
-    }
-
-
+    public record Edge(Intersection ConnectedTo, int Distance);
 
 }

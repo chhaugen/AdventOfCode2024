@@ -11,146 +11,136 @@ public class Day16Puzzle02 : Puzzle
 
     public override Task<string> SolveAsync(string input)
     {
-        Map2D<MapObject> map = Map2D.ParseInput<MapObject>(input, x => x switch
-        {
-            '.' => new Floor(),
-            '#' => new Wall(),
-            'S' => new Start(),
-            'E' => new End(),
-            _ => throw new NotImplementedException(),
-        });
+        Map2D<char> map = Map2D.ParseInput(input);
 
         Point2D start = map
             .AsPointEnumerable()
-            .First(x => map[x] is Start);
+            .First(x => map[x] is 'S');
 
         Point2D end = map
             .AsPointEnumerable()
-            .First(x => map[x] is End);
+            .First(x => map[x] is 'E');
 
-        Reindeer startReindeer = new(start, CardinalDirection.East);
 
-        AddCostsToMap(startReindeer, map);
-        _progressOutput(PrintMap(map));
-
-        var eValue = (End)map[end];
-        BridgeOddities(map);
-
-        CardinalDirection[] endDirections = [CardinalDirection.East, CardinalDirection.South];
-        List<int> bestPathPointsList = [];
-        foreach (var endDirection in endDirections)
+        List<Intersection> intersections = GetIntersectionPoints(map)
+            .Select(x => new Intersection(x))
+            .ToList();
+        Intersection? startIntersection = intersections.FirstOrDefault(x => x.Point == start);
+        if (startIntersection is null)
         {
-            var node = RecursivlyScanFromEndToFindStartOnBudget(new(end, endDirection), eValue.Cost, start, map)
-                ?? new Node<Reindeer>(default);
-            var children = node.GetAllChildren().DistinctBy(x => x.Value.Position).ToList();
-            //var allLeafs = node.GetLeafs().ToList();
-            //var leafs = allLeafs
-            //    .Where(x => map[x.Value.Position] is Start)
-            //    .ToList();
-            //var endLeafCount = leafs.Count;
-            //var bestPathPoints = leafs.Select(x => x.GetAncestors().ToList()).SelectMany(x => x).DistinctBy(x => x.Value.Position).ToList();
-            bestPathPointsList.Add(children.Count);
+            startIntersection = new(start);
+            intersections.Add(startIntersection);
         }
-
-        return Task.FromResult(bestPathPointsList.Max().ToString());
-    }
-
-    public void BridgeOddities(Map2D<MapObject> map)
-    {
-        CardinalDirection[] directions = Enum.GetValues<CardinalDirection>();
-        foreach (var point in map.AsPointEnumerable().Where(p => map[p] is Floor))
+        Intersection? endIntersection = intersections.FirstOrDefault(x => x.Point == end);
+        if (endIntersection is null)
         {
-            List<Floor> neighbours = [];
-            for (var i = 0; i < directions.Length; i++)
-            {
-                var possibleNeighbour = point.GetPointInDirection(directions[i]);
-                if (map[possibleNeighbour] is Floor neighbour)
-                    neighbours.Add(neighbour);
-            }
-            if (neighbours.Count == 2)
-            {
-                Floor? neighbourMin = neighbours.MinBy(x => x.Cost)!;
-                Floor? neighbourMax = neighbours.MaxBy(x => x.Cost)!;
-                int diffCost = neighbourMax.Cost - neighbourMin.Cost;
-                if (diffCost == 2)
-                {
-                    int supposedValue = neighbourMin.Cost + 1;
-                    if (((Floor)map[point]).Cost > supposedValue)
-                        ((Floor)map[point]).Cost = supposedValue;
-                }
-                if (diffCost == 1002)
-                {
-                    int supposedValue = neighbourMin.Cost + 1001;
-                    if (((Floor)map[point]).Cost > supposedValue)
-                        ((Floor)map[point]).Cost = supposedValue;
-                }
-            }
+            endIntersection = new(end);
+            intersections.Add(endIntersection);
+        }
+        intersections.ForEach(i => i.Edges = [.. GetEdges(i.Point, map, intersections)]);
+
+        var route = CalculateShortestPath([.. intersections], startIntersection, endIntersection)
+            ?? throw new InvalidOperationException("Could not find route!");
+
+        var minRoute = route.Max(x => x.Item2);
+
+        var node = RecursivlyBuildPathBackFromEnd(endIntersection, startIntersection, minRoute)
+            ?? throw new InvalidOperationException("Could not construct node tree backwards");
+
+        var leafs = node.GetLeafs().ToList();
+        var routes = leafs
+            .Select(x => x
+                .GetAncestors()
+                .Select(x => x.Value)
+                .ToList())
+            .ToList();
+
+        var points = routes.Select(GetPointsOfPath).ToList();
+        var distinctPoints = points.SelectMany(x => x).Distinct().ToList();
+
+        foreach (var point in points)
+        {
             var drawMap = map.Clone();
-            drawMap[point] = new Cross((Floor)drawMap[point]);
-            //_progressOutput(PrintMap(drawMap));
+            foreach (var pointt in point)
+            {
+                drawMap[pointt] = 'X';
+            }
+            _progressOutput(drawMap.PrintMap());
         }
+
+
+        return Task.FromResult(distinctPoints.Count.ToString());
     }
 
-    public Node<Reindeer>? RecursivlyScanFromEndToFindStartOnBudget(Reindeer reindeer, int budget, Point2D startPoint, Map2D<MapObject> map)
+    public static IEnumerable<Point2D> GetPointsOfPath(List<Intersection> intersections)
     {
-        Node<Reindeer> parent = new(reindeer);
-        Point2D pointInFront = reindeer.Position.GetPointInDirection(reindeer.Direction);
-        int currentFloorCount = ((Floor)map[reindeer.Position]).Cost;
-        if (pointInFront == startPoint)
-            parent.Children.Add(new(new(pointInFront, reindeer.Direction), parent));
-        else if (map[pointInFront] is Floor floorInFront)
+        Intersection previousIntersection = intersections[0];
+        foreach (var intersection in intersections.Skip(1))
         {
-            var countDiff = currentFloorCount - floorInFront.Cost;
-            if (countDiff == 1 || countDiff == 1001)
+            if (previousIntersection.Point.X == intersection.Point.X)
             {
-                foreach ((int addCost, Reindeer reindeerToCheck) in GetReindeersToCheck(new(pointInFront, reindeer.Direction)))
+                if (previousIntersection.Point.Y < intersection.Point.Y)
                 {
-                    var newChild = RecursivlyScanFromEndToFindStartOnBudget(reindeerToCheck, budget - countDiff, startPoint, map);
-                    if (newChild is not null)
+                    for (long y = previousIntersection.Point.Y; y <= intersection.Point.Y; y++)
                     {
-                        newChild.Parent = parent;
-                        parent.Children.Add(newChild);
+                        yield return new(previousIntersection.Point.X, y);
+                    }
+                }
+                else
+                {
+                    for (long y = previousIntersection.Point.Y; y >= intersection.Point.Y; y--)
+                    {
+                        yield return new(previousIntersection.Point.X, y);
                     }
                 }
             }
-            //else if (countDiff == 1001)
-            //{
-            //    var newChild = RecursivlyScanFromEndToFindStartOnBudget(new Reindeer(pointInFront, reindeer.Direction.TurnClockwise()), budget - countDiff, startPoint, map);
-            //    newChild   ??= RecursivlyScanFromEndToFindStartOnBudget(new Reindeer(pointInFront, reindeer.Direction.TurnAntiClockwise()), budget - countDiff, startPoint, map);
-            //    if (newChild is not null)
-            //    {
+            else
+            {
+                if (previousIntersection.Point.X < intersection.Point.X)
+                {
+                    for (long x = previousIntersection.Point.X; x <= intersection.Point.X; x++)
+                    {
+                        yield return new(x, previousIntersection.Point.Y);
+                    }
+                }
+                else
+                {
+                    for (long x = previousIntersection.Point.X; x >= intersection.Point.X; x--)
+                    {
+                        yield return new(x, previousIntersection.Point.Y);
+                    }
+                }
+            }
+            previousIntersection = intersection;
+        }
+    }
 
-            //        newChild.Parent = parent;
-            //        parent.Children.Add(newChild);
-            //    }
-            //}
+    public static Node<Intersection>? RecursivlyBuildPathBackFromEnd(Intersection end, Intersection start, int maxDistance)
+    {
+        Node<Intersection> parent = new(end);
+        foreach (var edge in end.Edges)
+        {
+            int newDistanceMax = maxDistance - edge.Distance;
+            if (newDistanceMax < 0)
+                continue;
+
+            if (edge.ConnectedTo.Point == start.Point)
+            {
+                parent.Children.Add(new(start, parent));
+            }
+            else
+            {
+                var newChild = RecursivlyBuildPathBackFromEnd(edge.ConnectedTo, start, newDistanceMax);
+                if (newChild != null)
+                {
+                    newChild.Parent = parent;
+                    parent.Children.Add(newChild);
+                }
+            }
         }
         if (parent.IsLeaf)
             return null;
-        else
-        {
-            var drawMap = map.Clone();
-            foreach (var child in parent.GetAllChildren())
-                drawMap[child.Value.Position] = new Cross((Floor)drawMap[child.Value.Position]);
-            drawMap[pointInFront] = new Cross((Floor)drawMap[pointInFront]);
-            _progressOutput(PrintMap(drawMap));
-        }
         return parent;
     }
-
-    public static IEnumerable<(int addCost, Reindeer reindeer)> GetReindeersToCheck(Reindeer reindeer)
-    {
-        CardinalDirection right = reindeer.Direction.TurnClockwise();
-        Point2D pointRight = reindeer.Position;
-        yield return (1001, new(pointRight, right));
-
-        Point2D pointInFront = reindeer.Position;
-        yield return (1, reindeer);
-
-        CardinalDirection left = reindeer.Direction.TurnAntiClockwise();
-        Point2D pointLeft = reindeer.Position;
-        yield return (1001, new(pointLeft, left));
-    }
-
 
 }
