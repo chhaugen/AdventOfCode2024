@@ -1,5 +1,6 @@
 ﻿using chhaugen.AdventOfCode2024.Common.Extentions;
 using chhaugen.AdventOfCode2024.Common.Structures;
+using static chhaugen.AdventOfCode2024.Common.Puzzles.Day15Puzzle01;
 using static chhaugen.AdventOfCode2024.Common.Puzzles.Day16Puzzle01;
 
 namespace chhaugen.AdventOfCode2024.Common.Puzzles;
@@ -23,6 +24,7 @@ public class Day16Puzzle02 : Puzzle
 
 
         List<Intersection> intersections = GetIntersectionPoints(map)
+            .Distinct()
             .Select(x => new Intersection(x))
             .ToList();
         Intersection? startIntersection = intersections.FirstOrDefault(x => x.Point == start);
@@ -44,10 +46,20 @@ public class Day16Puzzle02 : Puzzle
 
         var minRoute = route.Max(x => x.Item2);
 
-        var node = RecursivlyBuildPathBackFromEnd(endIntersection, startIntersection, minRoute)
+        AddDistanceFromStart(startIntersection, intersections);
+
+        {
+            var temp = intersections.OrderBy(x => x.DistanceFromStart).ToList();
+            foreach (var item in temp)
+            {
+                _progressOutput($"{item.Point}: {item.DistanceFromStart}");
+            }
+        }
+
+        var node = RecursivlyBuildPathBackFromEnd(endIntersection, startIntersection, [endIntersection], minRoute)
             ?? throw new InvalidOperationException("Could not construct node tree backwards");
 
-        var leafs = node.GetLeafs().ToList();
+        var leafs = node.GetLeafs().Where(x => x.Value.Point == start).ToList();
         var routes = leafs
             .Select(x => x
                 .GetAncestors()
@@ -115,32 +127,63 @@ public class Day16Puzzle02 : Puzzle
         }
     }
 
-    public static Node<Intersection>? RecursivlyBuildPathBackFromEnd(Intersection end, Intersection start, int maxDistance)
+    public static Node<Intersection>? RecursivlyBuildPathBackFromEnd(Intersection end, Intersection start, List<Intersection> previous, int maxNumber)
     {
         Node<Intersection> parent = new(end);
-        foreach (var edge in end.Edges)
+        foreach (var edge in end.Edges.Where(x => !previous.Contains(x.ConnectedTo)))
         {
-            int newDistanceMax = maxDistance - edge.Distance;
-            if (newDistanceMax < 0)
-                continue;
-
+            previous.Add(edge.ConnectedTo);
             if (edge.ConnectedTo.Point == start.Point)
             {
                 parent.Children.Add(new(start, parent));
+                return parent;
             }
             else
             {
-                var newChild = RecursivlyBuildPathBackFromEnd(edge.ConnectedTo, start, newDistanceMax);
-                if (newChild != null)
+                bool movingTowardsStart = edge.ConnectedTo.DistanceFromStart!.Value < maxNumber;
+                //if (newDistanceMax < 0)
+                //    continue;
+                if (movingTowardsStart)
                 {
-                    newChild.Parent = parent;
-                    parent.Children.Add(newChild);
+                    var newChild = RecursivlyBuildPathBackFromEnd(edge.ConnectedTo, start, [.. previous], edge.ConnectedTo.DistanceFromStart!.Value);
+                    if (newChild != null)
+                    {
+                        newChild.Parent = parent;
+                        parent.Children.Add(newChild);
+                    }
                 }
             }
         }
         if (parent.IsLeaf)
             return null;
         return parent;
+    }
+
+
+    public static void AddDistanceFromStart(Intersection start, List<Intersection> allIntersections)
+    {
+        start.DistanceFromStart = 0;
+        List<Intersection> currentIntersections = [start];
+        while (currentIntersections.Count > 0)
+        {
+            List<Intersection> newIntersections = [];
+            foreach (var currentIntersection in currentIntersections)
+            {
+                int currentCost = currentIntersection.DistanceFromStart
+                    ?? throw new InvalidOperationException("Previously visited intersection has DistanceFromStart null");
+                foreach (var edge in currentIntersection.Edges)
+                {
+                    int newCost = currentCost + edge.Distance;
+                    if (!edge.ConnectedTo.DistanceFromStart.HasValue || newCost < edge.ConnectedTo.DistanceFromStart.Value)
+                    {
+                        edge.ConnectedTo.DistanceFromStart = newCost;
+                        newIntersections.RemoveAll(x => x == edge.ConnectedTo);
+                        newIntersections.Add(edge.ConnectedTo);
+                    }
+                }
+            }
+            currentIntersections = newIntersections;
+        }
     }
 
 }

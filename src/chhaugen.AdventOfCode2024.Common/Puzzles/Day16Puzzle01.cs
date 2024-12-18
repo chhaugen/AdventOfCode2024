@@ -201,6 +201,7 @@ public class Day16Puzzle01 : Puzzle
     public record Intersection(Point2D Point)
     {
         public Edge[] Edges { get; set; } = [];
+        public int? DistanceFromStart { get; set; }
     }
 
     public record Edge(Intersection ConnectedTo, int Distance);
