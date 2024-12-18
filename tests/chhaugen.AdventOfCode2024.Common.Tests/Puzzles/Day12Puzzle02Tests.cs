@@ -1,7 +1,6 @@
 ﻿using chhaugen.AdventOfCode2024.Common.Puzzles;
 using chhaugen.AdventOfCode2024.Common.Structures;
 using chhaugen.AdventOfCode2024.Resources;
-using System.Drawing;
 using Xunit.Abstractions;
 
 namespace chhaugen.AdventOfCode2024.Common.Tests.Puzzles;
